@@ -32,6 +32,8 @@ jobs:
   build-apk:
     name: Build Android APK
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -94,3 +96,11 @@ jobs:
         with:
           name: tijaro-apk
           path: mobile/build/app/outputs/flutter-apk/app-release.apk
+      - name: Publish APK to a GitHub release (download from phone)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete latest --yes --cleanup-tag --repo "${{ github.repository }}" || true
+          gh release create latest "mobile/build/app/outputs/flutter-apk/app-release.apk#tijaro.apk" \
+            --repo "${{ github.repository }}" --title "Tijaro APK (latest build)" \
+            --notes "Automatic build from commit ${{ github.sha }}" --prerelease
