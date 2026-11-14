@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  db-tests:
+    name: Database tests (PostgreSQL)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run schema and tests
+        run: |
+          P="psql -h localhost -U postgres -v ON_ERROR_STOP=1 -q"
+          $P -d postgres -c "create database t"
+          $P -d t -f tests/00_supabase_stub.sql
+          $P -d t -f supabase/schema.sql
+          $P -d t -f tests/01_flow_and_security.sql
+
+  build-apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Generate Android project
+        working-directory: mobile
+        run: |
+          flutter --version
+          flutter create . --org dz.tipaza.delivery --project-name delivery_app --platforms=android
+          rm -rf test
+      - name: Add Android permissions
+        working-directory: mobile
+        run: |
+          python3 - <<'PY'
+          p = "android/app/src/main/AndroidManifest.xml"
+          s = open(p, encoding="utf-8").read()
+          perms = """    <uses-permission android:name="android.permission.INTERNET"/>
+              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+              <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+              """
+          if "ACCESS_FINE_LOCATION" not in s:
+              s = s.replace("<application", perms + "<application", 1)
+          open(p, "w", encoding="utf-8").write(s)
+          PY
+          grep -n "uses-permission" android/app/src/main/AndroidManifest.xml
+      - name: Install dependencies
+        working-directory: mobile
+        run: flutter pub get
+      - name: Analyze (errors fail the build)
+        working-directory: mobile
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - name: Build release APK
+        working-directory: mobile
+        run: |
+          FLAGS=""
+          if [ -f env.json ]; then FLAGS="--dart-define-from-file=env.json"; fi
+          flutter build apk --release $FLAGS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tijaro-apk
+          path: mobile/build/app/outputs/flutter-apk/app-release.apk
