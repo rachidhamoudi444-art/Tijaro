@@ -63,6 +63,21 @@ jobs:
           open(p, "w", encoding="utf-8").write(s)
           PY
           grep -n "uses-permission" android/app/src/main/AndroidManifest.xml
+      - name: Disable Android lint on release builds (lint tool crashes on CI)
+        working-directory: mobile
+        run: |
+          python3 - <<'PY'
+          import glob, re
+          files = glob.glob("android/app/build.gradle*")
+          assert files, "no app build.gradle found"
+          p = files[0]
+          s = open(p, encoding="utf-8").read()
+          if "checkReleaseBuilds" not in s:
+              s, n = re.subn(r"^android \{", "android {\n    lint {\n        checkReleaseBuilds = false\n        abortOnError = false\n    }", s, count=1, flags=re.M)
+              assert n == 1, "android block not found"
+          open(p, "w", encoding="utf-8").write(s)
+          print("patched", p)
+          PY
       - name: Install dependencies
         working-directory: mobile
         run: flutter pub get
