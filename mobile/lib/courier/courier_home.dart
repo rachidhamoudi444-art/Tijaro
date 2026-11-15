@@ -46,6 +46,13 @@ class _CourierHomeState extends State<CourierHome> {
   Future<void> _refresh({bool silent = false}) async {
     try {
       final me = await db.from('couriers').select('available').eq('id', _uid).single();
+      // موقعي الحالي يُرسل دورياً ليصل الطلب لأقرب ليفرور
+      if (me['available'] == true) {
+        final loc = await currentLocation();
+        if (loc != null) {
+          await db.rpc('courier_set_available', params: {'p_on': true, 'p_lat': loc.latitude, 'p_lng': loc.longitude});
+        }
+      }
       final bal = await db.rpc('courier_balance', params: {'cid': _uid});
       final cash = await db.rpc('courier_cash_open', params: {'cid': _uid});
       final mine = await db
@@ -74,7 +81,12 @@ class _CourierHomeState extends State<CourierHome> {
 
   Future<void> _setAvailable(bool on) async {
     try {
-      await db.rpc('courier_set_available', params: {'p_on': on});
+      final loc = on ? await currentLocation() : null;
+      await db.rpc('courier_set_available', params: {
+        'p_on': on,
+        'p_lat': loc?.latitude,
+        'p_lng': loc?.longitude,
+      });
       await _refresh();
     } catch (e) {
       _toast(friendlyError(e));

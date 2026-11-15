@@ -101,6 +101,14 @@ do $$ declare oid uuid; o orders; cc numeric; begin
   perform store_set_status(oid,'accepted'); perform store_set_status(oid,'preparing');
   perform t_logout();
 
+  -- قبل أن يجهّز المتجر الطلب لا يقبله أي ليفرور
+  perform t_login('00000000-0000-0000-0000-0000000000e1');
+  perform t_expect_fail(format('select courier_accept(%L)', oid), 'لم يعد متاحاً');
+  perform t_logout();
+  perform t_login('00000000-0000-0000-0000-0000000000d1');
+  perform store_set_status(oid,'ready');
+  perform t_logout();
+
   -- ليفرور أول يقبل، الثاني يفشل
   perform t_login('00000000-0000-0000-0000-0000000000e1');
   perform courier_accept(oid);
@@ -108,10 +116,6 @@ do $$ declare oid uuid; o orders; cc numeric; begin
   perform t_login('00000000-0000-0000-0000-0000000000e2');
   perform t_expect_fail(format('select courier_accept(%L)', oid), 'لم يعد متاحاً');
   perform t_expect_fail(format('select courier_set_status(%L,''picked_up'')', oid), 'غير مسموح');
-  perform t_logout();
-
-  perform t_login('00000000-0000-0000-0000-0000000000d1');
-  perform store_set_status(oid,'ready');
   perform t_logout();
 
   perform t_login('00000000-0000-0000-0000-0000000000e1');
@@ -242,7 +246,7 @@ do $$ declare oid uuid; sb0 numeric; cb0 numeric; begin
   oid := create_store_order('00000000-0000-0000-0000-00000000f001',
     '[{"product_id":"00000000-0000-0000-0000-00000000b002","qty":1}]'::jsonb, 'عنوان', 36.6050, 2.4600);
   perform t_logout();
-  perform t_login('00000000-0000-0000-0000-0000000000d1'); perform store_set_status(oid,'accepted'); perform t_logout();
+  perform t_login('00000000-0000-0000-0000-0000000000d1'); perform store_set_status(oid,'accepted'); perform store_set_status(oid,'preparing'); perform store_set_status(oid,'ready'); perform t_logout();
   perform t_login('00000000-0000-0000-0000-0000000000e2');
   perform courier_accept(oid);
   perform courier_report_store_fault(oid, 'المتجر مغلق');
@@ -312,4 +316,29 @@ begin
     raise exception 'ACCEPTED_BAD';
   exception when others then if sqlerrm = 'ACCEPTED_BAD' then raise exception 'قُبل بريد حقيقي'; end if; end;
   raise notice 'OK 11: أرقام الهاتف الجزائرية فقط';
+end $$;
+
+-- ---------- 12) التوزيع: الطلب الجاهز يظهر لأقرب الليفرورات أولاً ----------
+do $$
+declare oid uuid; n int;
+begin
+  perform t_login('00000000-0000-0000-0000-0000000000c1');
+  oid := create_store_order('00000000-0000-0000-0000-00000000f001',
+    '[{"product_id":"00000000-0000-0000-0000-00000000b002","qty":1}]'::jsonb, 'عنوان', 36.6050, 2.4600);
+  perform t_logout();
+  perform t_login('00000000-0000-0000-0000-0000000000d1');
+  perform store_set_status(oid,'accepted'); perform store_set_status(oid,'preparing');
+  perform t_logout();
+  perform t_login('00000000-0000-0000-0000-0000000000e1');
+  select count(*) into n from open_orders_for_courier() where order_id = oid;
+  assert n = 0, 'الطلب غير الجاهز يجب ألا يظهر للليفرور';
+  perform t_logout();
+  perform t_login('00000000-0000-0000-0000-0000000000d1');
+  perform store_set_status(oid,'ready');
+  perform t_logout();
+  perform t_login('00000000-0000-0000-0000-0000000000e1');
+  select count(*) into n from open_orders_for_courier() where order_id = oid;
+  assert n = 1, 'الطلب الجاهز يظهر لأقرب ليفرور';
+  perform t_logout();
+  raise notice 'OK 12: التوزيع على الأقرب بعد جاهزية المتجر';
 end $$;

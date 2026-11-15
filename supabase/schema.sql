@@ -37,7 +37,9 @@ insert into app_settings(key, value, note) values
   ('free_order_service_fee',    100,  'مبلغ خدمة ثابت للطلب الحر (شراء وتوصيل) (دج)'),
   ('free_order_max_purchase',   2000, 'سقف مبلغ الشراء في الطلب الحر (دج)'),
   ('cash_open_alert',           10000,'تنبيه الأدمن عند تجاوز نقد الليفرور المفتوح (دج)'),
-  ('deposit_required',          0,    '1 = تفعيل الضمان وسقف النقد (مغلق في التجربة)');
+  ('deposit_required',          0,    '1 = تفعيل الضمان وسقف النقد (مغلق في التجربة)'),
+  ('dispatch_nearest_count',    3,    'عدد أقرب الليفرورات الذين يرون الطلب أولاً'),
+  ('dispatch_exclusive_seconds',45,    'بعد هذه المدة (ثوانٍ) يراه كل الليفرورات المتاحين');
 
 -- ---------- Profiles ----------
 create table profiles (
@@ -113,6 +115,7 @@ create table orders (
   distance_km     numeric(6,2) not null,
   courier_commission numeric(10,2) not null default 0,
   store_commission   numeric(10,2) not null default 0,
+  ready_at        timestamptz,
   arrived_at      timestamptz,                  -- وصول الليفرور لعنوان الزبون
   fault           fault_party,
   fault_note      text,
@@ -329,6 +332,7 @@ begin
   values (p_type, auth.uid(), case when p_type='free' then p_kind end, p_desc, p_budget,
           p_from_addr, p_from_lat, p_from_lng, p_addr, p_lat, p_lng, fee, svc, round(km,2))
   returning id into oid;
+  update orders set ready_at = now() where id = oid;
   perform log_event(oid, 'new');
   return oid;
 end $$;
@@ -344,7 +348,7 @@ begin
           (o.status='accepted'  and p_status = 'preparing') or
           (o.status='preparing' and p_status = 'ready')) then
     raise exception 'انتقال حالة غير صالح: % -> %', o.status, p_status; end if;
-  update orders set status = p_status where id = p_order;
+  update orders set status = p_status, ready_at = case when p_status = 'ready' then now() else ready_at end where id = p_order;
   perform log_event(p_order, p_status);
 end $$;
 
@@ -365,15 +369,28 @@ create function open_orders_for_courier() returns table(order_id uuid, type orde
   pickup_lat double precision, pickup_lng double precision, dropoff_lat double precision, dropoff_lng double precision,
   delivery_fee numeric, distance_to_pickup_km numeric)
 language sql stable security definer set search_path = public as $$
+  -- يظهر الطلب أولاً لأقرب الليفرورات المؤهلين فقط (متاح + رصيد كافٍ)، ثم للجميع بعد مدة قصيرة
+  with me as (select * from couriers where id = auth.uid()),
+  elig as (
+    select c.id, c.last_lat, c.last_lng from couriers c join profiles p on p.id = c.id
+    where c.available and p.state = 'active' and courier_balance(c.id) >= setting('min_wallet_balance'))
   select o.id, o.type, o.status, o.pickup_lat, o.pickup_lng, o.dropoff_lat, o.dropoff_lng, o.delivery_fee,
-         round(haversine_km(c.last_lat, c.last_lng, o.pickup_lat, o.pickup_lng), 2)
-  from orders o join couriers c on c.id = auth.uid()
-  where o.courier_id is null and c.available
-    and ((o.type = 'store' and o.status in ('accepted','preparing','ready')) or (o.type <> 'store' and o.status = 'new'))
+         round(haversine_km(m.last_lat, m.last_lng, o.pickup_lat, o.pickup_lng), 2)
+  from orders o, me m
+  where o.courier_id is null and m.available
+    and ((o.type = 'store' and o.status = 'ready') or (o.type <> 'store' and o.status = 'new'))
+    and (
+      now() - coalesce(o.ready_at, o.created_at) > make_interval(secs => setting('dispatch_exclusive_seconds')::int)
+      or (m.last_lat is not null and (
+            select count(*) from elig e
+            where e.id <> m.id
+              and haversine_km(e.last_lat, e.last_lng, o.pickup_lat, o.pickup_lng)
+                  < haversine_km(m.last_lat, m.last_lng, o.pickup_lat, o.pickup_lng)
+          ) < setting('dispatch_nearest_count'))
+    )
   order by 9 nulls last
 $$;
 
--- الليفرور: قبول طلب (الأول يربح، والرصيد يجب أن يتجاوز الحد الأدنى)
 create function courier_accept(p_order uuid) returns void
 language plpgsql security definer set search_path = public as $$
 declare c couriers; p profiles; n int;
@@ -389,7 +406,7 @@ begin
   update orders set courier_id = c.id,
          status = case when type <> 'store' then 'ready' else status end
    where id = p_order and courier_id is null
-     and ((type = 'store' and status in ('accepted','preparing','ready')) or (type <> 'store' and status = 'new'));
+     and ((type = 'store' and status = 'ready') or (type <> 'store' and status = 'new'));
   get diagnostics n = row_count;
   if n = 0 then raise exception 'الطلب لم يعد متاحاً'; end if;
   perform log_event(p_order, (select status from orders where id = p_order), 'courier accepted');

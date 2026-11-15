@@ -5,6 +5,7 @@ import 'core/api.dart';
 import 'courier/courier_home.dart';
 import 'customer/customer_home.dart';
 import 'login_screen.dart';
+import 'store/store_home.dart';
 
 /// يوجّه المستخدم حسب حالة الدخول ودوره.
 class AuthGate extends StatelessWidget {
@@ -62,8 +63,9 @@ class _RoleRouter extends StatelessWidget {
           case 'customer':
             return const CustomerHome();
           case 'store':
+            return const StoreHome();
           case 'admin':
-            return const _Notice(text: 'المتجر والأدمن يستعملان لوحة الويب (قيد البناء).');
+            return const _Notice(text: 'لوحة الأدمن قيد البناء.');
           default:
             return const _Notice(text: 'دور غير معروف');
         }
