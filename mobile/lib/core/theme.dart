@@ -4,6 +4,7 @@ import 'package:flutter/material.dart' hide Text;
 class Brand {
   static const green = Color(0xFF126B4B); // Tijaro Green: اللون الأساسي
   static const fresh = Color(0xFF39B982); // Fresh Green: الحيوية والتفاعل
+  static const orange = Color(0xFFF7931E); // البرتقالي: لمسة الشعار
   static const soft = Color(0xFFF4F8F5); // Soft White: الخلفيات
   static const forest = Color(0xFF172B27); // Deep Forest: النص
 }

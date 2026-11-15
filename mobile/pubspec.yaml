@@ -30,10 +30,11 @@ flutter:
   assets:
     - assets/tipaza.jpg
     - assets/icon_full.png
+    - assets/wordmark.png
 
 flutter_launcher_icons:
   android: true
   ios: false
   image_path: assets/icon_full.png
-  adaptive_icon_background: "#0E5B41"
+  adaptive_icon_background: "#0A4D26"
   adaptive_icon_foreground: assets/icon_fg.png

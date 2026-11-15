@@ -15,10 +15,18 @@ class StoreCard extends StatelessWidget {
     final km = store['_km'];
     final url = store['image_url'] as String?;
 
+    final group = groupOfCategory(store['category']);
+    final color = group?.color ?? scheme.primary;
     Widget placeholder() => Container(
-          color: scheme.surfaceContainerHighest,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [color.withOpacity(0.30), color.withOpacity(0.12)],
+            ),
+          ),
           alignment: Alignment.center,
-          child: Icon(Icons.storefront, size: 40, color: scheme.onSurfaceVariant),
+          child: Icon(group?.icon ?? Icons.storefront, size: 44, color: color),
         );
 
     return Card(
@@ -52,12 +60,18 @@ class StoreCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              Text(
-                groupLabelOf(store['category']),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-              ),
+              Row(children: [
+                Icon(group?.icon ?? Icons.storefront, size: 14, color: color),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    groupLabelOf(store['category']),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: color, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ]),
               if (km is num)
                 Text(
                   '${km.toStringAsFixed(1)} كم',

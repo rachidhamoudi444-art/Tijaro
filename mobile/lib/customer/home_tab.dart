@@ -3,6 +3,8 @@ import '../core/i18n.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../core/api.dart';
+import '../core/brand.dart';
+import '../core/theme.dart';
 import '../core/labels.dart';
 import '../core/location.dart';
 import 'store_card.dart';
@@ -70,28 +72,21 @@ class _HomeTabState extends State<HomeTab> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           children: [
-            // الشعار + المدينة
+            // الشعار في أعلى الشاشة (كما في التصميم)
+            const Center(child: TijaroHeaderLogo()),
+            const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.asset('assets/icon_full.png', width: 34, height: 34),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(appName,
-                      style: text.headlineSmall?.copyWith(color: scheme.primary, fontWeight: FontWeight.w800)),
-                ]),
-                Row(children: [
-                  const LangToggle(),
                   Icon(Icons.location_on_outlined, color: scheme.primary, size: 20),
                   const SizedBox(width: 4),
                   Text(appCity),
                 ]),
+                const LangToggle(),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             // البحث
             TextField(
               controller: _search,
@@ -103,7 +98,7 @@ class _HomeTabState extends State<HomeTab> {
               ),
             ),
             const SizedBox(height: 16),
-            // اللافتة: الشعار تحته صورة تيبازة
+            // غلاف تيبازة تحت الشعار
             ClipRRect(
               borderRadius: BorderRadius.circular(20),
               child: Stack(
@@ -113,26 +108,28 @@ class _HomeTabState extends State<HomeTab> {
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
                           colors: [
-                            scheme.primary.withOpacity(0.92),
-                            scheme.primary.withOpacity(0.55),
+                            Brand.green.withOpacity(0.92),
+                            Brand.green.withOpacity(0.45),
                             Colors.transparent,
                           ],
-                          stops: const [0, 0.5, 1],
+                          stops: const [0, 0.55, 1],
                         ),
                       ),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(18),
+                  Positioned(
+                    left: 18,
+                    right: 18,
+                    bottom: 14,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('كل التجارة في بلاصة وحدة',
                             style: text.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         Text('اكتشف محلات منطقتك واطلب بسهولة',
                             style: text.bodyMedium?.copyWith(color: Colors.white)),
                       ],
@@ -155,11 +152,13 @@ class _HomeTabState extends State<HomeTab> {
                 for (final g in categoryGroups.take(11))
                   _CategoryTile(
                     icon: g.icon,
+                    color: g.color,
                     label: g.label,
                     onTap: () => widget.onOpenStores(g.key, ''),
                   ),
                 _CategoryTile(
                   icon: Icons.apps,
+                  color: Brand.green,
                   label: 'كل الفئات',
                   onTap: () => widget.onOpenStores(null, ''),
                 ),
@@ -208,7 +207,7 @@ class _HomeTabState extends State<HomeTab> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(children: [
-                        Icon(Icons.delivery_dining, color: scheme.primary, size: 30),
+                        const Icon(Icons.delivery_dining, color: Brand.orange, size: 30),
                         const SizedBox(width: 10),
                         Text('تحتاج إلى ليفرور؟', style: text.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                       ]),
@@ -232,15 +231,16 @@ class _HomeTabState extends State<HomeTab> {
 
 class _CategoryTile extends StatelessWidget {
   final IconData icon;
+  final Color color;
   final String label;
   final VoidCallback onTap;
-  const _CategoryTile({required this.icon, required this.label, required this.onTap});
+  const _CategoryTile({required this.icon, required this.color, required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Material(
-      color: scheme.surfaceContainerHighest,
+      color: color.withOpacity(0.10),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -252,8 +252,8 @@ class _CategoryTile extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 20,
-                backgroundColor: scheme.primaryContainer,
-                child: Icon(icon, color: scheme.primary, size: 22),
+                backgroundColor: color.withOpacity(0.18),
+                child: Icon(icon, color: color, size: 22),
               ),
               const SizedBox(height: 6),
               Text(label,

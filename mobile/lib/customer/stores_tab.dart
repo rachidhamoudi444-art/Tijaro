@@ -93,7 +93,10 @@ class _StoresTabState extends State<StoresTab> {
                 Padding(
                   padding: const EdgeInsetsDirectional.only(end: 8),
                   child: ChoiceChip(
+                    avatar: Icon(g.icon, size: 18, color: _group == g.key ? Colors.white : g.color),
                     label: Text(g.label),
+                    selectedColor: g.color,
+                    labelStyle: TextStyle(color: _group == g.key ? Colors.white : null),
                     selected: _group == g.key,
                     onSelected: (_) {
                       _group = g.key;
