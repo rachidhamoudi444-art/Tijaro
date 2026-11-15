@@ -1,7 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import 'core/i18n.dart';
 
 import 'core/api.dart';
 import 'core/phone.dart';
+import 'core/brand.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -75,18 +77,17 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('Tijaro',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
+                  const Align(alignment: AlignmentDirectional.centerEnd, child: LangToggle()),
+                  const SizedBox(height: 8),
+                  const TijaroLogo(),
+                  const SizedBox(height: 6),
                   Text('كل التجارة في بلاصة وحدة',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium),
+                      textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
                   const SizedBox(height: 32),
                   if (_register) ...[
                     TextField(
                       controller: _name,
-                      decoration: const InputDecoration(labelText: 'الاسم'),
+                      decoration: InputDecoration(labelText: tr('الاسم')),
                     ),
                     const SizedBox(height: 12),
                   ],
@@ -94,13 +95,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _phone,
                     keyboardType: TextInputType.phone,
                     textDirection: TextDirection.ltr,
-                    decoration: const InputDecoration(labelText: 'رقم الهاتف', hintText: '05XX XX XX XX'),
+                    decoration: InputDecoration(labelText: tr('رقم الهاتف'), hintText: '05XX XX XX XX'),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: _password,
                     obscureText: true,
-                    decoration: const InputDecoration(labelText: 'كلمة المرور'),
+                    decoration: InputDecoration(labelText: tr('كلمة المرور')),
                   ),
                   if (_error != null) ...[
                     const SizedBox(height: 12),

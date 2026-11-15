@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../core/i18n.dart';
 
 import '../core/api.dart';
 import '../core/labels.dart';
@@ -55,7 +56,7 @@ class _StoresTabState extends State<StoresTab> {
             textInputAction: TextInputAction.search,
             onSubmitted: (_) => _reload(),
             decoration: InputDecoration(
-              hintText: 'ابحث عن متجر...',
+              hintText: tr('ابحث عن متجر...'),
               prefixIcon: const Icon(Icons.search),
               suffixIcon: _search.text.isEmpty
                   ? null

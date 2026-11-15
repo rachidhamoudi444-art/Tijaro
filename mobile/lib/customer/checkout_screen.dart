@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../core/i18n.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../core/api.dart';
@@ -129,7 +130,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           TextField(
             controller: _address,
             maxLines: 2,
-            decoration: const InputDecoration(labelText: 'عنوان التسليم', border: OutlineInputBorder()),
+            decoration: InputDecoration(labelText: tr('عنوان التسليم'), border: OutlineInputBorder()),
           ),
           const SizedBox(height: 8),
           LocationRow(label: 'موقع التسليم', value: _loc, mapStart: _storeLoc, onChanged: _setLocation),

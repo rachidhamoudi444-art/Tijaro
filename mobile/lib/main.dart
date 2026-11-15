@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import 'core/i18n.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -15,6 +16,7 @@ Future<void> main() async {
     runApp(const _MissingConfig());
     return;
   }
+  await loadLang();
   await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
   runApp(const DeliveryApp());
 }
@@ -24,20 +26,24 @@ class DeliveryApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Tijaro',
-      debugShowCheckedModeBanner: false,
-      locale: const Locale('ar'),
-      supportedLocales: const [Locale('ar')],
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      // واجهة بيضاء نظيفة، والأخضر للعناصر المهمة
-      theme: buildTheme(),
-      themeMode: ThemeMode.light,
-      home: const AuthGate(),
+    return ValueListenableBuilder<String>(
+      valueListenable: appLang,
+      builder: (context, lang, _) => MaterialApp(
+        title: 'Tijaro',
+        debugShowCheckedModeBanner: false,
+        locale: Locale(lang),
+        supportedLocales: const [Locale('ar'), Locale('fr')],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        // واجهة بيضاء نظيفة، والأخضر للعناصر المهمة
+        theme: buildTheme(),
+        themeMode: ThemeMode.light,
+        // المفتاح يعيد بناء كل الشاشات عند تبديل اللغة
+        home: KeyedSubtree(key: ValueKey(lang), child: const AuthGate()),
+      ),
     );
   }
 }

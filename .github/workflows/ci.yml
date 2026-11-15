@@ -87,6 +87,12 @@ jobs:
       - name: Install dependencies
         working-directory: mobile
         run: flutter pub get
+      - name: App icon and name
+        working-directory: mobile
+        run: |
+          dart run flutter_launcher_icons
+          sed -i 's/android:label="[^"]*"/android:label="Tijaro"/' android/app/src/main/AndroidManifest.xml
+          grep -n "android:label" android/app/src/main/AndroidManifest.xml
       - name: Analyze (errors fail the build)
         working-directory: mobile
         run: flutter analyze --no-fatal-infos --no-fatal-warnings

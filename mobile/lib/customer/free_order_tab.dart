@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../core/i18n.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../core/api.dart';
@@ -152,7 +153,7 @@ class _FreeOrderTabState extends State<FreeOrderTab> {
           controller: _desc,
           maxLines: 3,
           decoration: InputDecoration(
-            labelText: purchase ? 'ماذا تريد أن يشتري لك الليفرور؟' : 'ما الذي يجب نقله؟',
+            labelText: purchase ? tr('ماذا تريد أن يشتري لك الليفرور؟') : tr('ما الذي يجب نقله؟'),
             border: const OutlineInputBorder(),
           ),
         ),
@@ -162,8 +163,8 @@ class _FreeOrderTabState extends State<FreeOrderTab> {
             controller: _budget,
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
-              labelText: 'الميزانية التقديرية (دج)',
-              helperText: 'الحد الأقصى ${dinar(_maxPurchase)}. تدفع ثمن الفاتورة الفعلي كاش للليفرور.',
+              labelText: tr('الميزانية التقديرية (دج)'),
+              helperText: tr('الحد الأقصى ${dinar(_maxPurchase)}. تدفع ثمن الفاتورة الفعلي كاش للليفرور.'),
               border: const OutlineInputBorder(),
             ),
           ),
@@ -172,7 +173,7 @@ class _FreeOrderTabState extends State<FreeOrderTab> {
         TextField(
           controller: _fromAddr,
           decoration: InputDecoration(
-            labelText: purchase ? 'اسم المحل أو مكان الشراء (اختياري)' : 'عنوان الاستلام',
+            labelText: purchase ? tr('اسم المحل أو مكان الشراء (اختياري)') : tr('عنوان الاستلام'),
             border: const OutlineInputBorder(),
           ),
         ),
@@ -189,7 +190,7 @@ class _FreeOrderTabState extends State<FreeOrderTab> {
         TextField(
           controller: _toAddr,
           maxLines: 2,
-          decoration: const InputDecoration(labelText: 'عنوان التسليم', border: OutlineInputBorder()),
+          decoration: InputDecoration(labelText: tr('عنوان التسليم'), border: OutlineInputBorder()),
         ),
         LocationRow(
           label: 'موقع التسليم',

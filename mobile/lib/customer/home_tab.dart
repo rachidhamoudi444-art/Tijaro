@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../core/i18n.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../core/api.dart';
@@ -73,9 +74,17 @@ class _HomeTabState extends State<HomeTab> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(appName,
-                    style: text.headlineMedium?.copyWith(color: scheme.primary, fontWeight: FontWeight.bold)),
                 Row(children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.asset('assets/icon_full.png', width: 34, height: 34),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(appName,
+                      style: text.headlineSmall?.copyWith(color: scheme.primary, fontWeight: FontWeight.w800)),
+                ]),
+                Row(children: [
+                  const LangToggle(),
                   Icon(Icons.location_on_outlined, color: scheme.primary, size: 20),
                   const SizedBox(width: 4),
                   Text(appCity),
@@ -89,25 +98,46 @@ class _HomeTabState extends State<HomeTab> {
               textInputAction: TextInputAction.search,
               onSubmitted: (q) => widget.onOpenStores(null, q.trim()),
               decoration: const InputDecoration(
-                hintText: 'ابحث عن متجر أو منتج...',
+                hintText: tr('ابحث عن متجر أو منتج...'),
                 prefixIcon: Icon(Icons.search),
               ),
             ),
             const SizedBox(height: 16),
-            // اللافتة
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: scheme.primary,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            // اللافتة: الشعار تحته صورة تيبازة
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Stack(
                 children: [
-                  Text('كل التجارة في بلاصة وحدة',
-                      style: text.titleLarge?.copyWith(color: scheme.onPrimary, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 6),
-                  Text('اكتشف محلات منطقتك واطلب بسهولة', style: text.bodyMedium?.copyWith(color: scheme.onPrimary)),
+                  Image.asset('assets/tipaza.jpg', height: 190, width: double.infinity, fit: BoxFit.cover),
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            scheme.primary.withOpacity(0.92),
+                            scheme.primary.withOpacity(0.55),
+                            Colors.transparent,
+                          ],
+                          stops: const [0, 0.5, 1],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('كل التجارة في بلاصة وحدة',
+                            style: text.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 4),
+                        Text('اكتشف محلات منطقتك واطلب بسهولة',
+                            style: text.bodyMedium?.copyWith(color: Colors.white)),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),

@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../core/i18n.dart';
 
 import '../core/api.dart';
 
@@ -39,6 +40,13 @@ class AccountTab extends StatelessWidget {
                 title: const Text('طلباتي'),
                 trailing: const Icon(Icons.chevron_left),
                 onTap: onOpenOrders,
+              ),
+            ),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.language),
+                title: Text(appLang.value == 'ar' ? 'Changer la langue : Français' : 'تغيير اللغة: العربية'),
+                onTap: () => setLang(appLang.value == 'ar' ? 'fr' : 'ar'),
               ),
             ),
             Card(

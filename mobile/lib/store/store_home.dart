@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../core/i18n.dart';
 
 import '../core/api.dart';
 import '../core/labels.dart';
@@ -87,7 +88,8 @@ class _StoreHomeState extends State<StoreHome> {
               )
             : Text(s == null ? 'متجري' : '${s['name']}'),
         actions: [
-          IconButton(icon: const Icon(Icons.logout), tooltip: 'خروج', onPressed: () => db.auth.signOut()),
+          const LangToggle(),
+          IconButton(icon: const Icon(Icons.logout), tooltip: tr('خروج'), onPressed: () => db.auth.signOut()),
         ],
       ),
       body: s == null
@@ -110,9 +112,9 @@ class _StoreHomeState extends State<StoreHome> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tab,
         onDestinationSelected: (i) => setState(() => _tab = i),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.receipt_long_outlined), selectedIcon: Icon(Icons.receipt_long), label: 'الطلبات'),
-          NavigationDestination(icon: Icon(Icons.inventory_2_outlined), selectedIcon: Icon(Icons.inventory_2), label: 'المنتجات'),
+        destinations: [
+          NavigationDestination(icon: Icon(Icons.receipt_long_outlined), selectedIcon: Icon(Icons.receipt_long), label: tr('الطلبات')),
+          NavigationDestination(icon: Icon(Icons.inventory_2_outlined), selectedIcon: Icon(Icons.inventory_2), label: tr('المنتجات')),
         ],
       ),
     );
@@ -288,12 +290,12 @@ class _ProductsViewState extends State<_ProductsView> {
       builder: (ctx) => AlertDialog(
         title: Text(p == null ? 'منتج جديد' : 'تعديل المنتج'),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
-          TextField(controller: name, decoration: const InputDecoration(labelText: 'اسم المنتج')),
+          TextField(controller: name, decoration: InputDecoration(labelText: tr('اسم المنتج'))),
           const SizedBox(height: 12),
           TextField(
             controller: price,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'السعر (دج)'),
+            decoration: InputDecoration(labelText: tr('السعر (دج)')),
           ),
         ]),
         actions: [

@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../core/i18n.dart';
 
 import '../core/api.dart';
 import '../core/location.dart';
@@ -127,7 +128,7 @@ class _CourierHomeState extends State<CourierHome> {
             TextField(
               controller: itemsCtl,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'ثمن المشتريات حسب الفاتورة (دج)'),
+              decoration: InputDecoration(labelText: tr('ثمن المشتريات حسب الفاتورة (دج)')),
               onChanged: (v) {
                 final items = num.tryParse(v) ?? 0;
                 cashCtl.text = (items + asNum(order['delivery_fee']) + asNum(order['service_fee'])).toStringAsFixed(0);
@@ -136,7 +137,7 @@ class _CourierHomeState extends State<CourierHome> {
           TextField(
             controller: cashCtl,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'المبلغ المحصَّل من الزبون (دج)'),
+            decoration: InputDecoration(labelText: tr('المبلغ المحصَّل من الزبون (دج)')),
           ),
         ]),
         actions: [
@@ -165,8 +166,9 @@ class _CourierHomeState extends State<CourierHome> {
       appBar: AppBar(
         title: const Text('الليفرور'),
         actions: [
+          const LangToggle(),
           IconButton(
-            tooltip: 'خروج',
+            tooltip: tr('خروج'),
             icon: const Icon(Icons.logout),
             onPressed: () => db.auth.signOut(),
           ),
