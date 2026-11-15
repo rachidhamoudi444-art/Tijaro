@@ -97,7 +97,7 @@ class _HomeTabState extends State<HomeTab> {
               controller: _search,
               textInputAction: TextInputAction.search,
               onSubmitted: (q) => widget.onOpenStores(null, q.trim()),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: tr('ابحث عن متجر أو منتج...'),
                 prefixIcon: Icon(Icons.search),
               ),

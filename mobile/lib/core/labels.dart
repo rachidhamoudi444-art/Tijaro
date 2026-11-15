@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart' hide Text;
-import 'i18n.dart';
 
 /// اسم التطبيق (مؤقت حسب التصور المعروض، يُغيَّر من هنا فقط).
 const appName = 'Tijaro';

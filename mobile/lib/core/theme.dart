@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart' hide Text;
-import 'i18n.dart';
 
 /// ألوان الهوية (من التصميم المعتمد).
 class Brand {
