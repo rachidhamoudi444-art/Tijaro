@@ -3,6 +3,7 @@ import 'core/i18n.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/api.dart';
+import 'core/app_mode.dart';
 import 'courier/courier_home.dart';
 import 'customer/customer_home.dart';
 import 'login_screen.dart';
@@ -58,17 +59,20 @@ class _RoleRouter extends StatelessWidget {
             text: 'حسابك غير نشط (${p['state']}). تواصل مع الإدارة.',
           );
         }
-        switch (p['role']) {
+        final role = '${p['role']}';
+        if (role != allowedRole) {
+          // حساب في تطبيق غير تطبيقه: نوجّهه للتطبيق الصحيح
+          return _Notice(
+            text: 'هذا الحساب مخصص لتطبيق ${appNameForRole(role)}. حمّل ذلك التطبيق وادخل منه.',
+          );
+        }
+        switch (role) {
           case 'courier':
             return const CourierHome();
-          case 'customer':
-            return const CustomerHome();
           case 'store':
             return const StoreHome();
-          case 'admin':
-            return const _Notice(text: 'لوحة الأدمن قيد البناء.');
           default:
-            return const _Notice(text: 'دور غير معروف');
+            return const CustomerHome();
         }
       },
     );

@@ -4,6 +4,7 @@ import 'core/i18n.dart';
 import 'core/api.dart';
 import 'core/phone.dart';
 import 'core/brand.dart';
+import 'core/app_mode.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -81,8 +82,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 8),
                   const TijaroLogo(),
                   const SizedBox(height: 6),
-                  Text('كل التجارة في بلاصة وحدة',
-                      textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+                  if (!isCustomerApp)
+                    Text(appModeName,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold))
+                  else
+                    Text('كل التجارة في بلاصة وحدة',
+                        textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
                   const SizedBox(height: 32),
                   if (_register) ...[
                     TextField(
@@ -117,10 +124,17 @@ class _LoginScreenState extends State<LoginScreen> {
                           : Text(_register ? 'إنشاء حساب زبون' : 'دخول'),
                     ),
                   ),
-                  TextButton(
-                    onPressed: _busy ? null : () => setState(() => _register = !_register),
-                    child: Text(_register ? 'لدي حساب' : 'حساب جديد (زبون)'),
-                  ),
+                  if (isCustomerApp)
+                    TextButton(
+                      onPressed: _busy ? null : () => setState(() => _register = !_register),
+                      child: Text(_register ? 'لدي حساب' : 'حساب جديد (زبون)'),
+                    )
+                  else
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Text('لفتح حساب، تواصل مع إدارة Tijaro',
+                          textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall),
+                    ),
                 ],
               ),
             ),

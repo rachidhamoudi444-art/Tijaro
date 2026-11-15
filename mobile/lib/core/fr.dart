@@ -168,6 +168,9 @@ const Map<String, String> frFull = {
 };
 
 const Map<String, String> frFrag = {
+  'هذا الحساب مخصص لتطبيق': 'Ce compte est réservé à l’application',
+  'حمّل ذلك التطبيق وادخل منه.': 'Téléchargez cette application et connectez-vous.',
+  'لفتح حساب، تواصل مع إدارة Tijaro': 'Pour ouvrir un compte, contactez l’administration Tijaro',
   // أجزاء داخل نصوص فيها متغيرات
   'التوصيل:': 'Livraison :',
   'الحالة:': 'Statut :',

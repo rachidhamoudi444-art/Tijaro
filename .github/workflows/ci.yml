@@ -30,10 +30,24 @@ jobs:
           $P -d t -f tests/01_flow_and_security.sql
 
   build-apk:
-    name: Build Android APK
+    name: Build APK (${{ matrix.app }})
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: customer
+            appid: dz.tipaza.delivery.delivery_app
+            label: Tijaro
+            file: tijaro.apk
+          - app: driver
+            appid: dz.tipaza.driver
+            label: Tijaro Driver
+            file: tijaro-driver.apk
+          - app: business
+            appid: dz.tipaza.business
+            label: Tijaro Business
+            file: tijaro-business.apk
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -87,30 +101,45 @@ jobs:
       - name: Install dependencies
         working-directory: mobile
         run: flutter pub get
-      - name: App icon and name
+      - name: App icon, name and id
         working-directory: mobile
         run: |
-          dart run flutter_launcher_icons
-          sed -i 's/android:label="[^"]*"/android:label="Tijaro"/' android/app/src/main/AndroidManifest.xml
-          grep -n "android:label" android/app/src/main/AndroidManifest.xml
+          dart run flutter_launcher_icons -f flutter_launcher_icons-${{ matrix.app }}.yaml
+          sed -i 's/android:label="[^"]*"/android:label="${{ matrix.label }}"/' android/app/src/main/AndroidManifest.xml
+          sed -i -E 's/applicationId *=? *"[^"]*"/applicationId = "${{ matrix.appid }}"/' android/app/build.gradle*
+          grep -n "applicationId\|android:label" android/app/build.gradle* android/app/src/main/AndroidManifest.xml
       - name: Analyze (errors fail the build)
         working-directory: mobile
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
       - name: Build release APK
         working-directory: mobile
         run: |
-          FLAGS=""
-          if [ -f env.json ]; then FLAGS="--dart-define-from-file=env.json"; fi
+          FLAGS="--dart-define=APP_MODE=${{ matrix.app }}"
+          if [ -f env.json ]; then FLAGS="$FLAGS --dart-define-from-file=env.json"; fi
           flutter build apk --release $FLAGS
+          cp build/app/outputs/flutter-apk/app-release.apk "${{ matrix.file }}"
       - uses: actions/upload-artifact@v4
         with:
-          name: tijaro-apk
-          path: mobile/build/app/outputs/flutter-apk/app-release.apk
-      - name: Publish APK to a GitHub release (download from phone)
+          name: apk-${{ matrix.app }}
+          path: mobile/${{ matrix.file }}
+
+  publish:
+    name: Publish APKs (download from phone)
+    needs: build-apk
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: apks
+          merge-multiple: true
+      - name: Publish release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          ls -la apks
           gh release delete latest --yes --cleanup-tag --repo "${{ github.repository }}" || true
-          gh release create latest "mobile/build/app/outputs/flutter-apk/app-release.apk#tijaro.apk" \
-            --repo "${{ github.repository }}" --title "Tijaro APK (latest build)" \
-            --notes "Automatic build from commit ${{ github.sha }}" --prerelease
+          gh release create latest apks/*.apk \
+            --repo "${{ github.repository }}" --title "Tijaro apps (latest build)" \
+            --notes "Customer: tijaro.apk | Driver: tijaro-driver.apk | Business: tijaro-business.apk. Commit ${{ github.sha }}" --prerelease
