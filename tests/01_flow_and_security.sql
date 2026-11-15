@@ -290,3 +290,26 @@ do $$ declare q numeric; oid uuid; begin
 end $$;
 
 \echo ALL TESTS PASSED
+
+-- ---------- 11) أرقام الهاتف: جزائرية فقط (موبيليس/أوريدو/جازي) ----------
+do $$
+begin
+  insert into auth.users(id, phone, email, raw_user_meta_data)
+    values (gen_random_uuid(), null, '0661234567@phone.local', '{"phone":"0661234567"}');
+  begin
+    insert into auth.users(id, phone, email, raw_user_meta_data)
+      values (gen_random_uuid(), null, '0412345678@phone.local', '{"phone":"0412345678"}');
+    raise exception 'ACCEPTED_BAD';
+  exception when others then if sqlerrm = 'ACCEPTED_BAD' then raise exception 'قُبل رقم خاطئ 04'; end if; end;
+  begin
+    insert into auth.users(id, phone, email, raw_user_meta_data)
+      values (gen_random_uuid(), null, '055123@phone.local', '{"phone":"055123"}');
+    raise exception 'ACCEPTED_BAD';
+  exception when others then if sqlerrm = 'ACCEPTED_BAD' then raise exception 'قُبل رقم قصير'; end if; end;
+  begin
+    insert into auth.users(id, phone, email, raw_user_meta_data)
+      values (gen_random_uuid(), null, 'someone@gmail.com', '{"phone":"0661234568"}');
+    raise exception 'ACCEPTED_BAD';
+  exception when others then if sqlerrm = 'ACCEPTED_BAD' then raise exception 'قُبل بريد حقيقي'; end if; end;
+  raise notice 'OK 11: أرقام الهاتف الجزائرية فقط';
+end $$;

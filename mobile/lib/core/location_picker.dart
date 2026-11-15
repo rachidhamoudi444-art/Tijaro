@@ -48,8 +48,17 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'dz.tipaza.delivery',
+                urlTemplate: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
+                subdomains: const ['a', 'b', 'c', 'd'],
+                fallbackUrl: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'dz.tipaza.delivery.delivery_app',
+                maxZoom: 19,
+              ),
+              const RichAttributionWidget(
+                alignment: AttributionAlignment.bottomLeft,
+                attributions: [
+                  TextSourceAttribution('© OpenStreetMap contributors © CARTO'),
+                ],
               ),
             ],
           ),

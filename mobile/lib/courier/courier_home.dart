@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../core/api.dart';
+import '../core/location.dart';
 
 /// الشاشة الرئيسية للليفرور: الحالة، المحفظة، الطلبات المفتوحة، وطلباتي الجارية.
 class CourierHome extends StatefulWidget {
@@ -239,6 +240,15 @@ class _MyOrderCard extends StatelessWidget {
 
   const _MyOrderCard({required this.order, required this.onStatus, required this.onDeliver});
 
+  /// وجهة الملاحة: المتجر قبل الاستلام، والزبون بعده.
+  (double, double)? _navTarget() {
+    final after = order['status'] == 'picked_up' || order['status'] == 'on_the_way';
+    final lat = after ? order['dropoff_lat'] : order['pickup_lat'];
+    final lng = after ? order['dropoff_lng'] : order['pickup_lng'];
+    if (lat is num && lng is num) return (lat.toDouble(), lng.toDouble());
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final status = order['status'] as String;
@@ -263,7 +273,18 @@ class _MyOrderCard extends StatelessWidget {
           Text('العنوان: ${order['dropoff_address']}'),
           Text('المطلوب من الزبون: ${(asNum(order['items_total']) + asNum(order['delivery_fee']) + asNum(order['service_fee'])).toStringAsFixed(0)} دج'),
           const SizedBox(height: 8),
-          action,
+          Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
+            action,
+            if (_navTarget() != null)
+              OutlinedButton.icon(
+                icon: const Icon(Icons.navigation_outlined),
+                label: Text(status == 'on_the_way' || status == 'picked_up' ? 'الملاحة إلى الزبون' : 'الملاحة إلى المتجر'),
+                onPressed: () {
+                  final t = _navTarget()!;
+                  openInGoogleMaps(t.$1, t.$2);
+                },
+              ),
+          ]),
         ]),
       ),
     );

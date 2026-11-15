@@ -88,14 +88,9 @@ class _HomeTabState extends State<HomeTab> {
               controller: _search,
               textInputAction: TextInputAction.search,
               onSubmitted: (q) => widget.onOpenStores(null, q.trim()),
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 hintText: 'ابحث عن متجر أو منتج...',
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
-                ),
+                prefixIcon: Icon(Icons.search),
               ),
             ),
             const SizedBox(height: 16),
@@ -119,30 +114,25 @@ class _HomeTabState extends State<HomeTab> {
             const SizedBox(height: 20),
             Text('تصفح حسب الفئة', style: text.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
-            Row(
+            GridView.count(
+              crossAxisCount: 4,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: 0.85,
               children: [
-                for (final g in categoryGroups)
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Material(
-                        color: scheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(16),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(16),
-                          onTap: () => widget.onOpenStores(g.key, ''),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            child: Column(children: [
-                              Icon(g.icon, color: scheme.primary),
-                              const SizedBox(height: 6),
-                              Text(g.label, style: text.bodySmall, textAlign: TextAlign.center),
-                            ]),
-                          ),
-                        ),
-                      ),
-                    ),
+                for (final g in categoryGroups.take(11))
+                  _CategoryTile(
+                    icon: g.icon,
+                    label: g.label,
+                    onTap: () => widget.onOpenStores(g.key, ''),
                   ),
+                _CategoryTile(
+                  icon: Icons.apps,
+                  label: 'كل الفئات',
+                  onTap: () => widget.onOpenStores(null, ''),
+                ),
               ],
             ),
             const SizedBox(height: 20),
@@ -204,6 +194,45 @@ class _HomeTabState extends State<HomeTab> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  const _CategoryTile({required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: scheme.primaryContainer,
+                child: Icon(icon, color: scheme.primary, size: 22),
+              ),
+              const SizedBox(height: 6),
+              Text(label,
+                  maxLines: 2,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall),
+            ],
+          ),
         ),
       ),
     );

@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'auth_gate.dart';
+import 'core/theme.dart';
 
 // تُمرَّر عند التشغيل: --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...
 const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
@@ -33,14 +34,9 @@ class DeliveryApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      // التصميم المعتمد: أخضر مع وضع داكن (يتبع إعداد الهاتف)
-      theme: ThemeData(colorSchemeSeed: const Color(0xFF1B8A5A), useMaterial3: true),
-      darkTheme: ThemeData(
-        colorSchemeSeed: const Color(0xFF1B8A5A),
-        brightness: Brightness.dark,
-        useMaterial3: true,
-      ),
-      themeMode: ThemeMode.system,
+      // واجهة بيضاء نظيفة، والأخضر للعناصر المهمة
+      theme: buildTheme(),
+      themeMode: ThemeMode.light,
       home: const AuthGate(),
     );
   }

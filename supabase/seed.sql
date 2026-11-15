@@ -29,7 +29,7 @@ begin
   values (s, 'متجر الخضر', 'vegetables', 'حي تجريبي', 36.5925, 2.4510, true) returning id into sid;
   insert into products(store_id, name, price) values (sid, 'طماطم 1كغ', 120), (sid, 'بطاطا 1كغ', 90), (sid, 'برتقال 1كغ', 160);
   insert into stores(owner_id, name, category, address, lat, lng, is_open)
-  values (s, 'متجر الملابس', 'clothing', 'وسط تيبازة', 36.5880, 2.4440, true) returning id into sid;
+  values (s, 'متجر الملابس', 'women_clothing', 'وسط تيبازة', 36.5880, 2.4440, true) returning id into sid;
   insert into products(store_id, name, price) values (sid, 'قميص', 2500), (sid, 'سروال جينز', 3500);
 
   -- شحن أولي للمحفظة (للتجربة فقط)

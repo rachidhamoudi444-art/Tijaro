@@ -81,7 +81,22 @@ class _StoreScreenState extends State<StoreScreen> {
               final p = products[i];
               final id = p['id'] as String;
               final qty = _cart[id] ?? 0;
+              final img = p['image_url'] as String?;
               return ListTile(
+                contentPadding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    width: 64,
+                    height: 64,
+                    child: (img == null || img.isEmpty)
+                        ? Container(
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            child: Icon(Icons.image_outlined, color: Theme.of(context).colorScheme.outline),
+                          )
+                        : Image.network(img, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.broken_image_outlined)),
+                  ),
+                ),
                 title: Text('${p['name']}'),
                 subtitle: Text(dinar(asNum(p['price']))),
                 trailing: Row(mainAxisSize: MainAxisSize.min, children: [

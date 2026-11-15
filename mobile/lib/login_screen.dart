@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'core/api.dart';
+import 'core/phone.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -26,10 +27,18 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submit() async {
-    final phone = _phone.text.trim();
+    final phone = normalizePhone(_phone.text);
     final pass = _password.text;
+    if (_register && !isValidMobile(phone)) {
+      setState(() => _error = 'أدخل رقم هاتف جزائري صحيح (موبيليس 06 / أوريدو 05 / جازي 07)، مثال: 0550123456');
+      return;
+    }
     if (phone.length < 9 || pass.length < 6) {
-      setState(() => _error = 'أدخل رقم هاتف صحيح وكلمة مرور من 6 أحرف على الأقل');
+      setState(() => _error = 'أدخل رقم الهاتف وكلمة مرور من 6 أحرف على الأقل');
+      return;
+    }
+    if (_register && _name.text.trim().length < 2) {
+      setState(() => _error = 'أدخل اسمك');
       return;
     }
     setState(() {
@@ -66,14 +75,18 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('توصيل تيبازة',
+                  Text('Tijaro',
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineMedium),
+                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
+                  Text('كل التجارة في بلاصة وحدة',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium),
                   const SizedBox(height: 32),
                   if (_register) ...[
                     TextField(
                       controller: _name,
-                      decoration: const InputDecoration(labelText: 'الاسم', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(labelText: 'الاسم'),
                     ),
                     const SizedBox(height: 12),
                   ],
@@ -81,13 +94,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _phone,
                     keyboardType: TextInputType.phone,
                     textDirection: TextDirection.ltr,
-                    decoration: const InputDecoration(labelText: 'رقم الهاتف', border: OutlineInputBorder()),
+                    decoration: const InputDecoration(labelText: 'رقم الهاتف', hintText: '05XX XX XX XX'),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: _password,
                     obscureText: true,
-                    decoration: const InputDecoration(labelText: 'كلمة المرور', border: OutlineInputBorder()),
+                    decoration: const InputDecoration(labelText: 'كلمة المرور'),
                   ),
                   if (_error != null) ...[
                     const SizedBox(height: 12),

@@ -1,3 +1,4 @@
+import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -25,4 +26,10 @@ Future<LatLng?> currentLocation() async {
   } catch (_) {
     return null;
   }
+}
+
+/// يفتح Google Maps (التطبيق أو المتصفح) للوصول إلى نقطة.
+Future<void> openInGoogleMaps(double lat, double lng) async {
+  final uri = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving');
+  await launchUrl(uri, mode: LaunchMode.externalApplication);
 }

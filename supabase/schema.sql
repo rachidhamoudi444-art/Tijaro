@@ -54,7 +54,7 @@ create table stores (
   id         uuid primary key default gen_random_uuid(),
   owner_id   uuid not null references profiles(id),
   name       text not null,
-  category   text not null check (category in ('restaurant','vegetables','butcher','grocery','clothing','electronics','other')),
+  category   text not null check (category in ('restaurant','grocery','vegetables','butcher','women_clothing','men_clothing','kids_clothing','kids_supplies','electronics','phones','cosmetics','parapharmacy','bakery','fish','stationery','hardware','household','gifts','auto_parts','pets','other')),
   image_url  text,
   address    text,
   lat        double precision not null,
@@ -256,11 +256,19 @@ $$;
 
 -- ---------- New users are always customers ----------
 create function handle_new_user() returns trigger language plpgsql security definer set search_path = public as $$
+declare v_phone text := coalesce(new.phone, new.raw_user_meta_data->>'phone'); v_email text := to_jsonb(new)->>'email';
 begin
+  -- التسجيل بالهاتف فقط، وبرقم جزائري صحيح: موبيليس 06 / أوريدو 05 / جازي 07 (10 أرقام)
+  if v_email is not null and v_email not like '%@phone.local' then
+    raise exception 'التسجيل برقم الهاتف فقط';
+  end if;
+  if v_email is not null then
+    if v_phone is null or v_phone !~ '^0[567][0-9]{8}$' or v_email <> v_phone || '@phone.local' then
+      raise exception 'رقم هاتف جزائري غير صالح (موبيليس 06 / أوريدو 05 / جازي 07)';
+    end if;
+  end if;
   insert into profiles(id, role, full_name, phone)
-  -- التطبيق يسجّل بإيميل وهمي (رقم الهاتف@phone.local) فيُقرأ الرقم من البيانات الوصفية
-  values (new.id, 'customer', new.raw_user_meta_data->>'full_name',
-          coalesce(new.phone, new.raw_user_meta_data->>'phone'));
+  values (new.id, 'customer', new.raw_user_meta_data->>'full_name', v_phone);
   return new;
 end $$;
 create trigger on_auth_user_created after insert on auth.users
