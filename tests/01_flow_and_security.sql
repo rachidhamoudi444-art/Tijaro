@@ -342,3 +342,32 @@ begin
   perform t_logout();
   raise notice 'OK 12: التوزيع على الأقرب بعد جاهزية المتجر';
 end $$;
+
+-- ---------- 13) بيانات الاتصال: لا يراها إلا الليفرور المعيَّن وبعد الاستلام ----------
+do $$
+declare oid uuid; r record; n int;
+begin
+  perform t_login('00000000-0000-0000-0000-0000000000c1');
+  oid := create_store_order('00000000-0000-0000-0000-00000000f001',
+    '[{"product_id":"00000000-0000-0000-0000-00000000b002","qty":1}]'::jsonb, 'عنوان', 36.6050, 2.4600);
+  perform t_logout();
+  perform t_login('00000000-0000-0000-0000-0000000000d1');
+  perform store_set_status(oid,'accepted'); perform store_set_status(oid,'preparing'); perform store_set_status(oid,'ready');
+  perform t_logout();
+  perform t_login('00000000-0000-0000-0000-0000000000e1');
+  perform courier_accept(oid);
+  select * into r from courier_order_contact(oid);
+  assert r.customer_phone is null, 'هاتف الزبون مخفي قبل الاستلام';
+  perform courier_set_status(oid,'picked_up');
+  select * into r from courier_order_contact(oid);
+  assert r.calls = 0;
+  perform courier_log_call(oid, 36.6, 2.46);
+  select * into r from courier_order_contact(oid);
+  assert r.calls = 1, 'تسجيل محاولة الاتصال';
+  perform t_logout();
+  -- ليفرور آخر لا يرى شيئاً
+  perform t_login('00000000-0000-0000-0000-0000000000e2');
+  perform t_expect_fail(format('select * from courier_order_contact(%L)', oid), 'غير مسموح');
+  perform t_logout();
+  raise notice 'OK 13: بيانات الاتصال';
+end $$;

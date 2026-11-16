@@ -1,6 +1,9 @@
 import 'dart:async';
 
+import 'dart:async';
+
 import 'package:flutter/material.dart' hide Text;
+import 'package:url_launcher/url_launcher.dart';
 import '../core/i18n.dart';
 
 import '../core/api.dart';
@@ -200,7 +203,7 @@ class _CourierHomeState extends State<CourierHome> {
                   const SizedBox(height: 16),
                   Text('طلباتي الجارية', style: Theme.of(context).textTheme.titleMedium),
                   if (_mine.isEmpty) const Padding(padding: EdgeInsets.all(12), child: Text('لا طلبات جارية')),
-                  for (final o in _mine) _MyOrderCard(order: o, onStatus: _setStatus, onDeliver: _deliver),
+                  for (final o in _mine) _MyOrderCard(order: o, onStatus: _setStatus, onDeliver: _deliver, onChanged: _refresh),
                   const SizedBox(height: 16),
                   Text('طلبات متاحة', style: Theme.of(context).textTheme.titleMedium),
                   if (!_available)
@@ -247,36 +250,194 @@ const _statusLabels = {
   'on_the_way': 'في الطريق للزبون',
 };
 
-class _MyOrderCard extends StatelessWidget {
+class _MyOrderCard extends StatefulWidget {
   final Map<String, dynamic> order;
   final Future<void> Function(String id, String status) onStatus;
   final Future<void> Function(Map<String, dynamic> order) onDeliver;
+  final Future<void> Function({bool silent}) onChanged;
 
-  const _MyOrderCard({required this.order, required this.onStatus, required this.onDeliver});
+  const _MyOrderCard({
+    required this.order,
+    required this.onStatus,
+    required this.onDeliver,
+    required this.onChanged,
+  });
+
+  @override
+  State<_MyOrderCard> createState() => _MyOrderCardState();
+}
+
+class _MyOrderCardState extends State<_MyOrderCard> {
+  Map<String, dynamic>? _contact; // هاتف الزبون/المتجر + عدد الاتصالات + وقت الوصول
+  int _needCalls = 3;
+  int _waitMinutes = 10;
+  Timer? _tick;
+  bool _busy = false;
+
+  Map<String, dynamic> get order => widget.order;
+  String get status => order['status'] as String;
+  String get id => order['id'] as String;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted && status == 'on_the_way') setState(() {});
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _MyOrderCard old) {
+    super.didUpdateWidget(old);
+    if (old.order['status'] != order['status']) _load();
+  }
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    try {
+      final rows = await db.rpc('courier_order_contact', params: {'p_order': id});
+      final st = await db
+          .from('app_settings')
+          .select()
+          .inFilter('key', ['required_call_attempts', 'wait_minutes_at_address']);
+      if (!mounted) return;
+      setState(() {
+        _contact = (rows as List).isEmpty ? null : Map<String, dynamic>.of(rows.first);
+        for (final r in st) {
+          if (r['key'] == 'required_call_attempts') _needCalls = asNum(r['value']).toInt();
+          if (r['key'] == 'wait_minutes_at_address') _waitMinutes = asNum(r['value']).toInt();
+        }
+      });
+    } catch (_) {}
+  }
+
+  void _msg(String m) {
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
+  }
+
+  Future<void> _run(Future<void> Function() job) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      await job();
+    } catch (e) {
+      _msg(friendlyError(e));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _dial(String? phone) async {
+    if (phone == null || phone.isEmpty) return;
+    await launchUrl(Uri(scheme: 'tel', path: phone));
+  }
+
+  /// يسجّل محاولة الاتصال (مع موقعك) ثم يفتح الهاتف.
+  Future<void> _callCustomer() => _run(() async {
+        final loc = await currentLocation();
+        if (loc == null) {
+          _msg('تعذّر تحديد موقعك. فعّل GPS وامنح الإذن.');
+          return;
+        }
+        await db.rpc('courier_log_call', params: {'p_order': id, 'p_lat': loc.latitude, 'p_lng': loc.longitude});
+        await _load();
+        await _dial('${_contact?['customer_phone'] ?? ''}');
+      });
+
+  Future<void> _arrived() => _run(() async {
+        final loc = await currentLocation();
+        if (loc == null) {
+          _msg('تعذّر تحديد موقعك. فعّل GPS وامنح الإذن.');
+          return;
+        }
+        await db.rpc('courier_arrived', params: {'p_order': id, 'p_lat': loc.latitude, 'p_lng': loc.longitude});
+        await _load();
+        _msg('تم تسجيل وصولك. ابدأ الانتظار.');
+      });
+
+  Duration? _waitLeft() {
+    final a = DateTime.tryParse('${_contact?['arrived_at']}')?.toLocal();
+    if (a == null) return null;
+    final left = a.add(Duration(minutes: _waitMinutes)).difference(DateTime.now());
+    return left.isNegative ? Duration.zero : left;
+  }
+
+  int get _calls => (_contact?['calls'] as num?)?.toInt() ?? 0;
+
+  Future<bool> _confirm(String title, String body) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: Text(body),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('رجوع')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('تأكيد')),
+        ],
+      ),
+    );
+    return ok == true;
+  }
+
+  Future<void> _notDelivered() async {
+    final left = _waitLeft();
+    final met = _calls >= _needCalls && left != null && left == Duration.zero;
+    final ok = await _confirm(
+      'تبليغ: لم يُسلَّم',
+      met
+          ? 'الشروط مكتملة (اتصالات ووصول وانتظار). سيُسجَّل الخطأ على الزبون وتُعوَّض.'
+          : 'الشروط غير مكتملة (المطلوب $_needCalls اتصالات، ووصول، وانتظار $_waitMinutes دقائق). سيُحال الطلب إلى الإدارة للبتّ فيه.',
+    );
+    if (!ok) return;
+    await _run(() async {
+      final r = await db.rpc('courier_report_not_delivered', params: {'p_order': id});
+      _msg(r == 'customer_fault' ? 'سُجّل الخطأ على الزبون وتم تعويضك.' : 'أُحيل الطلب إلى الإدارة.');
+      await widget.onChanged(silent: true);
+    });
+  }
+
+  Future<void> _storeFault() async {
+    final ok = await _confirm('المتجر لم يجهّز الطلب', 'سيُحال الطلب إلى الإدارة للبتّ فيه. هل تريد المتابعة؟');
+    if (!ok) return;
+    await _run(() async {
+      await db.rpc('courier_report_store_fault', params: {'p_order': id});
+      _msg('أُحيل الطلب إلى الإدارة.');
+      await widget.onChanged(silent: true);
+    });
+  }
 
   /// وجهة الملاحة: المتجر قبل الاستلام، والزبون بعده.
   (double, double)? _navTarget() {
-    final after = order['status'] == 'picked_up' || order['status'] == 'on_the_way';
+    final after = status == 'picked_up' || status == 'on_the_way';
     final lat = after ? order['dropoff_lat'] : order['pickup_lat'];
     final lng = after ? order['dropoff_lng'] : order['pickup_lng'];
     if (lat is num && lng is num) return (lat.toDouble(), lng.toDouble());
     return null;
   }
 
+  String _mmss(Duration d) =>
+      '${d.inMinutes.toString().padLeft(2, '0')}:${(d.inSeconds % 60).toString().padLeft(2, '0')}';
+
   @override
   Widget build(BuildContext context) {
-    final status = order['status'] as String;
-    final id = order['id'] as String;
     Widget? action;
     if (status == 'ready') {
-      action = FilledButton(onPressed: () => onStatus(id, 'picked_up'), child: const Text('استلمت الطلب'));
+      action = FilledButton(onPressed: () => widget.onStatus(id, 'picked_up'), child: const Text('استلمت الطلب'));
     } else if (status == 'picked_up') {
-      action = FilledButton(onPressed: () => onStatus(id, 'on_the_way'), child: const Text('انطلقت للزبون'));
+      action = FilledButton(onPressed: () => widget.onStatus(id, 'on_the_way'), child: const Text('انطلقت للزبون'));
     } else if (status == 'on_the_way') {
-      action = FilledButton(onPressed: () => onDeliver(order), child: const Text('سلّمت الطلب'));
+      action = FilledButton(onPressed: () => widget.onDeliver(order), child: const Text('سلّمت الطلب'));
     } else {
       action = const Text('بانتظار جاهزية المتجر');
     }
+    final afterPickup = status == 'picked_up' || status == 'on_the_way';
+    final left = _waitLeft();
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -284,6 +445,8 @@ class _MyOrderCard extends StatelessWidget {
           Text('${_typeLabel(order['type'])} • ${_statusLabels[status] ?? status}',
               style: const TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
+          if (_contact?['store_name'] != null) Text('المتجر: ${_contact!['store_name']}'),
+          if (afterPickup && _contact?['customer_name'] != null) Text('الزبون: ${_contact!['customer_name']}'),
           Text('العنوان: ${order['dropoff_address']}'),
           Text('المطلوب من الزبون: ${(asNum(order['items_total']) + asNum(order['delivery_fee']) + asNum(order['service_fee'])).toStringAsFixed(0)} دج'),
           const SizedBox(height: 8),
@@ -292,13 +455,51 @@ class _MyOrderCard extends StatelessWidget {
             if (_navTarget() != null)
               OutlinedButton.icon(
                 icon: const Icon(Icons.navigation_outlined),
-                label: Text(status == 'on_the_way' || status == 'picked_up' ? 'الملاحة إلى الزبون' : 'الملاحة إلى المتجر'),
+                label: Text(afterPickup ? 'الملاحة إلى الزبون' : 'الملاحة إلى المتجر'),
                 onPressed: () {
                   final t = _navTarget()!;
                   openInGoogleMaps(t.$1, t.$2);
                 },
               ),
+            if (!afterPickup && '${_contact?['store_phone'] ?? ''}'.isNotEmpty)
+              OutlinedButton.icon(
+                icon: const Icon(Icons.phone_outlined),
+                label: const Text('اتصال بالمتجر'),
+                onPressed: () => _dial('${_contact!['store_phone']}'),
+              ),
           ]),
+          if (status == 'ready') ...[
+            const SizedBox(height: 6),
+            TextButton(onPressed: _busy ? null : _storeFault, child: const Text('المتجر لم يجهّز الطلب')),
+          ],
+          if (afterPickup) ...[
+            const Divider(height: 22),
+            Text('إن لم يرد الزبون', style: Theme.of(context).textTheme.labelLarge),
+            const SizedBox(height: 6),
+            Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
+              FilledButton.tonalIcon(
+                icon: const Icon(Icons.call),
+                label: Text('اتصال بالزبون ($_calls/$_needCalls)'),
+                onPressed: _busy ? null : _callCustomer,
+              ),
+              if (status == 'on_the_way')
+                FilledButton.tonalIcon(
+                  icon: const Icon(Icons.pin_drop_outlined),
+                  label: Text(left == null ? 'وصلت إلى العنوان' : 'وصلت ✓'),
+                  onPressed: (_busy || left != null) ? null : _arrived,
+                ),
+            ]),
+            if (left != null && left > Duration.zero)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text('وقت الانتظار المتبقي: ${_mmss(left)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            const SizedBox(height: 6),
+            TextButton(
+              onPressed: (_busy || status != 'on_the_way') ? null : _notDelivered,
+              child: const Text('لم يُسلَّم (الزبون لا يرد)'),
+            ),
+          ],
         ]),
       ),
     );

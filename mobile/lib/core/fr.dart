@@ -1,5 +1,17 @@
 // الترجمة الفرنسية. frFull: مطابقة كاملة للنص. frFrag: أجزاء تُستبدل داخل نصوص فيها متغيرات.
 const Map<String, String> frFull = {
+  'إن لم يرد الزبون': 'Si le client ne répond pas',
+  'اتصال بالمتجر': 'Appeler le magasin',
+  'المتجر لم يجهّز الطلب': 'Le magasin n’a pas préparé la commande',
+  'لم يُسلَّم (الزبون لا يرد)': 'Non livré (le client ne répond pas)',
+  'وصلت إلى العنوان': 'Je suis arrivé à l’adresse',
+  'وصلت ✓': 'Arrivé ✓',
+  'رجوع': 'Retour',
+  'تأكيد': 'Confirmer',
+  'تبليغ: لم يُسلَّم': 'Signalement : non livré',
+  'سُجّل الخطأ على الزبون وتم تعويضك.': 'La faute est enregistrée côté client et vous êtes indemnisé.',
+  'أُحيل الطلب إلى الإدارة.': 'La commande a été transmise à l’administration.',
+  'تم تسجيل وصولك. ابدأ الانتظار.': 'Votre arrivée est enregistrée. Commencez l’attente.',
   'أخرى': 'Autres',
   'أدخل اسماً وسعراً صحيحاً': 'Saisissez un nom et un prix valides',
   'أدخل اسمك': 'Saisissez votre nom',
@@ -168,6 +180,19 @@ const Map<String, String> frFull = {
 };
 
 const Map<String, String> frFrag = {
+  'اتصال بالزبون': 'Appeler le client',
+  'وقت الانتظار المتبقي:': 'Temps d’attente restant :',
+  'المتجر:': 'Magasin :',
+  'الزبون:': 'Client :',
+  'الشروط مكتملة (اتصالات ووصول وانتظار). سيُسجَّل الخطأ على الزبون وتُعوَّض.': 'Conditions remplies (appels, arrivée, attente). La faute sera enregistrée côté client et vous serez indemnisé.',
+  'الشروط غير مكتملة': 'Conditions non remplies',
+  'المطلوب': 'Requis',
+  'اتصالات': 'appels',
+  'ووصول': 'arrivée',
+  'وانتظار': 'attente',
+  'دقائق': 'minutes',
+  'سيُحال الطلب إلى الإدارة للبتّ فيه.': 'La commande sera transmise à l’administration pour décision.',
+  'سيُحال الطلب إلى الإدارة للبتّ فيه. هل تريد المتابعة؟': 'La commande sera transmise à l’administration. Voulez-vous continuer ?',
   'هذا الحساب مخصص لتطبيق': 'Ce compte est réservé à l’application',
   'حمّل ذلك التطبيق وادخل منه.': 'Téléchargez cette application et connectez-vous.',
   'لفتح حساب، تواصل مع إدارة Tijaro': 'Pour ouvrir un compte, contactez l’administration Tijaro',

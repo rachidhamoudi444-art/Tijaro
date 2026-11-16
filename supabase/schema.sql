@@ -445,6 +445,26 @@ begin
 end $$;
 
 -- التسليم: يُحصَّل النقد وتُخصم العمولات في نفس العملية
+create function courier_order_contact(p_order uuid) returns table(
+  customer_name text, customer_phone text, store_name text, store_phone text, calls int, arrived_at timestamptz)
+language plpgsql stable security definer set search_path = public as $$
+declare o orders;
+begin
+  select * into o from orders where id = p_order and courier_id = auth.uid()
+    and status in ('ready','picked_up','on_the_way');
+  if not found then raise exception 'غير مسموح'; end if;
+  return query
+    select case when o.status in ('picked_up','on_the_way') then cp.full_name end,
+           case when o.status in ('picked_up','on_the_way') then cp.phone end,
+           st.name, sp.phone,
+           (select count(*)::int from call_attempts ca where ca.order_id = o.id),
+           o.arrived_at
+    from profiles cp
+    left join stores st on st.id = o.store_id
+    left join profiles sp on sp.id = st.owner_id
+    where cp.id = o.customer_id;
+end $$;
+
 create function courier_deliver(p_order uuid, p_cash numeric, p_items_override numeric default null) returns void
 language plpgsql security definer set search_path = public as $$
 declare o orders; cc numeric; sc numeric; items numeric; expected numeric;
@@ -679,7 +699,7 @@ grant usage, select on all sequences in schema public to authenticated;
 grant execute on function
   create_store_order, create_free_order, store_set_status, customer_cancel, open_orders_for_courier,
   courier_accept, courier_set_status, courier_arrived, courier_log_call, courier_deliver,
-  courier_report_not_delivered, courier_report_store_fault, admin_resolve_dispute,
+  courier_report_not_delivered, courier_report_store_fault, courier_order_contact, admin_resolve_dispute,
   courier_request_topup, admin_decide_topup, admin_receive_cash, admin_pay_store,
   admin_set_role, admin_set_state, courier_set_available,
   courier_balance, store_balance, courier_cash_open, setting, current_role_of, is_admin, my_store_ids,
