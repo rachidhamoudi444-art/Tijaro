@@ -29,6 +29,7 @@ insert into auth.users(id, phone) values
  ('00000000-0000-0000-0000-0000000000e1','cr1'),('00000000-0000-0000-0000-0000000000e2','cr2'),
  ('00000000-0000-0000-0000-0000000000e3','cr3_poor');
 update profiles set role='admin' where id='00000000-0000-0000-0000-0000000000a1';
+update profiles set commune_id = 4201 where id in ('00000000-0000-0000-0000-0000000000c1','00000000-0000-0000-0000-0000000000c2');
 update profiles set role='store' where id='00000000-0000-0000-0000-0000000000d1';
 update profiles set role='courier' where id in ('00000000-0000-0000-0000-0000000000e1','00000000-0000-0000-0000-0000000000e2','00000000-0000-0000-0000-0000000000e3');
 insert into couriers(id, available, last_lat, last_lng) values
@@ -370,4 +371,41 @@ begin
   perform t_expect_fail(format('select * from courier_order_contact(%L)', oid), 'غير مسموح');
   perform t_logout();
   raise notice 'OK 13: بيانات الاتصال';
+end $$;
+
+-- ---------- 14) الولايات والبلديات: محجوبة حتى يفتحها الأدمن ----------
+do $$
+declare n int; oid uuid;
+begin
+  assert (select count(*) from communes) = 220, 'عدد البلديات المجهزة';
+  assert (select count(*) from communes where wilaya_id = 42) = 28, 'تيبازة 28 بلدية';
+  assert (select count(*) from communes where is_active) = 1, 'تيبازة المدينة فقط مفتوحة';
+  -- الزبون يرى القوائم كاملة (مع الحالة) لكنه لا يختار بلدية محجوبة
+  perform t_login('00000000-0000-0000-0000-0000000000c1');
+  select count(*) into n from communes; assert n = 220;
+  perform t_expect_fail($q$select set_my_commune(1601)$q$, 'غير متاحة');
+  perform set_my_commune(4201);
+  perform t_expect_fail($q$update communes set is_active = true$q$, 'permission denied');
+  perform t_expect_fail($q$select admin_set_commune_active(1601, true)$q$, 'للأدمن فقط');
+  perform t_logout();
+  -- الأدمن يحجب تيبازة: يختفي المتجر ويفشل الطلب الحر
+  perform t_login('00000000-0000-0000-0000-0000000000a1');
+  perform admin_set_commune_active(4201, false);
+  perform t_logout();
+  perform t_login('00000000-0000-0000-0000-0000000000c1');
+  select count(*) into n from stores; assert n = 0, 'متجر في بلدية محجوبة لا يظهر للزبون';
+  perform t_expect_fail($q$select create_store_order('00000000-0000-0000-0000-00000000f001','[{"product_id":"00000000-0000-0000-0000-00000000b002","qty":1}]'::jsonb,'x',36.6,2.46)$q$, 'غير متاح');
+  perform t_expect_fail($q$select create_free_order('p2p',null,'x',null,'a',36.6,2.4,'b',36.6,2.5)$q$, 'غير متوفرة');
+  perform t_logout();
+  -- فتح ولاية كاملة ثم إعادة تيبازة المدينة
+  perform t_login('00000000-0000-0000-0000-0000000000a1');
+  perform admin_set_wilaya_active(42, true);
+  assert (select count(*) from communes where is_active) = 28;
+  perform admin_set_wilaya_active(42, false);
+  perform admin_set_commune_active(4201, true);
+  perform t_logout();
+  perform t_login('00000000-0000-0000-0000-0000000000c1');
+  select count(*) into n from stores; assert n = 1, 'المتجر يعود بعد فتح البلدية';
+  perform t_logout();
+  raise notice 'OK 14: الولايات والبلديات';
 end $$;

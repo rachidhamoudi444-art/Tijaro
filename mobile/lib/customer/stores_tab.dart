@@ -3,6 +3,7 @@ import '../core/i18n.dart';
 
 import '../core/api.dart';
 import '../core/labels.dart';
+import '../core/region.dart';
 import 'store_card.dart';
 
 /// كل المتاجر المفتوحة مع بحث وتصفية حسب الفئة. يُعاد بناؤها (بمفتاح) عند الفتح من الرئيسية.
@@ -35,6 +36,8 @@ class _StoresTabState extends State<StoresTab> {
 
   Future<List<Map<String, dynamic>>> _load() async {
     var q = db.from('stores').select('id,name,category,address,lat,lng,image_url').eq('is_open', true);
+    final cid = myCommune.value?['id'];
+    if (cid != null) q = q.eq('commune_id', cid);
     final g = groupByKey(_group);
     if (g != null) q = q.inFilter('category', g.categories);
     final text = _search.text.trim();

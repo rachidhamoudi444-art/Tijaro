@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' hide Text;
 import '../core/i18n.dart';
 
+import '../core/region.dart';
 import 'account_tab.dart';
 import 'free_order_tab.dart';
 import 'home_tab.dart';
@@ -22,6 +23,22 @@ class _CustomerHomeState extends State<CustomerHome> {
   String _query = '';
   int _storesKey = 0;
   int _freeKey = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        await loadMyCommune();
+      } catch (_) {}
+      if (mounted && myCommune.value == null) {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const RegionPickerScreen(mandatory: true)),
+        );
+      }
+    });
+  }
 
   static const _titles = ['', 'المتاجر', 'اطلب ليفرور', 'حسابي'];
 
@@ -46,16 +63,16 @@ class _CustomerHomeState extends State<CustomerHome> {
     Navigator.push(context, MaterialPageRoute(builder: (_) => const OrdersScreen()));
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final pages = <Widget>[
+  List<Widget> _pages() {
+    return <Widget>[
       HomeTab(
+        key: ValueKey('home${myCommune.value?['id']}'),
         onOpenStores: _openStores,
         onOpenCourier: () => setState(() => _tab = 2),
         onOpenStore: _openStore,
       ),
       StoresTab(
-        key: ValueKey('stores$_storesKey'),
+        key: ValueKey('stores$_storesKey-${myCommune.value?['id']}'),
         initialGroup: _group,
         initialQuery: _query,
         onOpenStore: _openStore,
@@ -72,6 +89,17 @@ class _CustomerHomeState extends State<CustomerHome> {
       ),
       AccountTab(onOpenOrders: _openOrders),
     ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<Map<String, dynamic>?>(
+      valueListenable: myCommune,
+      builder: (context, _, __) => _scaffold(_pages()),
+    );
+  }
+
+  Widget _scaffold(List<Widget> pages) {
     return Scaffold(
       appBar: _tab == 0 ? null : AppBar(title: Text(_titles[_tab])),
       body: IndexedStack(index: _tab, children: pages),

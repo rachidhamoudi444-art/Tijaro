@@ -41,6 +41,251 @@ insert into app_settings(key, value, note) values
   ('dispatch_nearest_count',    3,    'عدد أقرب الليفرورات الذين يرون الطلب أولاً'),
   ('dispatch_exclusive_seconds',45,    'بعد هذه المدة (ثوانٍ) يراه كل الليفرورات المتاحين');
 
+-- ---------- الولايات والبلديات (مجهّزة مسبقاً، وكلها محجوبة إلا ما يفتحه الأدمن) ----------
+create table wilayas (
+  id      int primary key,          -- رمز الولاية الرسمي
+  name_ar text not null,
+  name_fr text not null
+);
+create table communes (
+  id        int primary key,        -- رمز البلدية (رمز الولاية * 100 + رقم)
+  wilaya_id int not null references wilayas(id),
+  name_ar   text not null,
+  name_fr   text not null,
+  is_active boolean not null default false   -- false = محجوبة (قريباً)
+);
+create index on communes(wilaya_id);
+insert into wilayas(id,name_ar,name_fr) values
+  (9,'البليدة','Blida'),
+  (16,'الجزائر','Alger'),
+  (19,'سطيف','Sétif'),
+  (23,'عنابة','Annaba'),
+  (25,'قسنطينة','Constantine'),
+  (31,'وهران','Oran'),
+  (42,'تيبازة','Tipaza');
+insert into communes(id,wilaya_id,name_ar,name_fr) values
+  (901,9,'البليدة','Blida'),
+  (902,9,'الشبلي','Chebli'),
+  (903,9,'بوعينان','Bouinan'),
+  (904,9,'وادي العلايق','Oued El Alleug'),
+  (905,9,'أولاد يعيش','Ouled Yaich'),
+  (906,9,'الشريعة','Chrea'),
+  (907,9,'العفرون','El-affroun'),
+  (908,9,'الشفة','Chiffa'),
+  (909,9,'حمام ملوان','Hammam Melouane'),
+  (910,9,'بن خليل','Benkhelil'),
+  (911,9,'الصومعة','Souma'),
+  (912,9,'موزاية','Mouzaia'),
+  (913,9,'سوحان','Souhane'),
+  (914,9,'مفتاح','Meftah'),
+  (915,9,'أولاد سلامة','Ouled Slama'),
+  (916,9,'بوفاريك','Boufarik'),
+  (917,9,'الأربعاء','Larbaa'),
+  (918,9,'وادي جر','Oued Djer'),
+  (919,9,'بني تامو','Beni-tamou'),
+  (920,9,'بوعرفة','Bouarfa'),
+  (921,9,'بني مراد','Beni Mered'),
+  (922,9,'بوقرة','Bougara'),
+  (923,9,'قرواو','Guerrouaou'),
+  (924,9,'عين الرمانة','Ain Romana'),
+  (925,9,'جبابرة','Djebabra'),
+  (1601,16,'الجزائر','Alger Centre'),
+  (1602,16,'سيدي امحمد','Sidi M''hamed'),
+  (1603,16,'المدنية','El Madania'),
+  (1604,16,'محمد بلوزداد','Mohamed Belouzdad'),
+  (1605,16,'باب الوادي','Bab El Oued'),
+  (1606,16,'بولوغين بن زيري','Bologhine Ibnou Ziri'),
+  (1607,16,'القصبة','Casbah'),
+  (1608,16,'وادي قريش','Oued Koriche'),
+  (1609,16,'بئر مراد رايس','Bir Mourad Rais'),
+  (1610,16,'الابيار','El Biar'),
+  (1611,16,'بوزريعة','Bouzareah'),
+  (1612,16,'بئر خادم','Birkhadem'),
+  (1613,16,'الحراش','El Harrach'),
+  (1614,16,'براقي','Baraki'),
+  (1615,16,'وادي السمار','Oued Smar'),
+  (1616,16,'بوروبة','Bourouba'),
+  (1617,16,'حسين داي','Hussein Dey'),
+  (1618,16,'القبة','Kouba'),
+  (1619,16,'باش جراح','Bachedjerah'),
+  (1620,16,'الدار البيضاء','Dar El Beida'),
+  (1621,16,'باب الزوار','Bab Ezzouar'),
+  (1622,16,'ابن عكنون','Ben Aknoun'),
+  (1623,16,'دالي ابراهيم','Dely Ibrahim'),
+  (1624,16,'الحمامات الرومانية','Bains Romains'),
+  (1625,16,'الرايس حميدو','Rais Hamidou'),
+  (1626,16,'جسر قسنطينة','Djasr Kasentina'),
+  (1627,16,'المرادية','El Mouradia'),
+  (1628,16,'حيدرة','Hydra'),
+  (1629,16,'المحمدية','Mohammadia'),
+  (1630,16,'برج الكيفان','Bordj El Kiffan'),
+  (1631,16,'المغارية','El Magharia'),
+  (1632,16,'بني مسوس','Beni Messous'),
+  (1633,16,'الكاليتوس','Les Eucalyptus'),
+  (1634,16,'تسالة المرجة','Tessala El Merdja'),
+  (1635,16,'أولاد شبل','Ouled Chebel'),
+  (1636,16,'بئر توتة','Bir Touta'),
+  (1637,16,'سيدي موسى','Sidi Moussa'),
+  (1638,16,'الرويبة','Rouiba'),
+  (1639,16,'هراوة','Herraoua'),
+  (1640,16,'رغاية','Reghaia'),
+  (1641,16,'عين طاية','Ain Taya'),
+  (1642,16,'برج البحري','Bordj El Bahri'),
+  (1643,16,'المرسى','El Merssa'),
+  (1644,16,'زرالدة','Zeralda'),
+  (1645,16,'السحاولة','Sehaoula'),
+  (1646,16,'المعالمة','Maalma'),
+  (1647,16,'بابا حسن','Baba Hesen'),
+  (1648,16,'الدويرة','Douira'),
+  (1649,16,'الدرارية','Draria'),
+  (1650,16,'الرحمانية','Rahmania'),
+  (1651,16,'أولاد فايت','Ouled Fayet'),
+  (1652,16,'الشراقة','Cheraga'),
+  (1653,16,'سطاوالي','Setaouali'),
+  (1654,16,'العاشور','El Achour'),
+  (1655,16,'سويدانية','Souidania'),
+  (1656,16,'الخرايسية','Kheraisia'),
+  (1657,16,'عين بنيان','Ain Benian'),
+  (1901,19,'سطيف','Setif'),
+  (1902,19,'العين الكبيرة','Ain El Kebira'),
+  (1903,19,'بني عزيز','Beni-aziz'),
+  (1904,19,'أولاد سي أحمد','Ouled Si Ahmed'),
+  (1905,19,'بوطالب','Boutaleb'),
+  (1906,19,'عين الروى','Ain-roua'),
+  (1907,19,'ذراع القبيلة','Draa-kebila'),
+  (1908,19,'بئر العرش','Bir-el-arch'),
+  (1909,19,'بني شبانة','Beni Chebana'),
+  (1910,19,'أولاد تبان','Ouled Tebben'),
+  (1911,19,'الحامة','Hamma'),
+  (1912,19,'معاوية','Maaouia'),
+  (1913,19,'عين لقراج','Ain-legradj'),
+  (1914,19,'عين عباسة','Ain Abessa'),
+  (1915,19,'الدهامشة','Dehamcha'),
+  (1916,19,'بابور','Babor'),
+  (1917,19,'قجال','Guidjel'),
+  (1918,19,'عين الحجر','Ain Lahdjar'),
+  (1919,19,'بوسلام','Bousselam'),
+  (1920,19,'العلمة','El Eulma'),
+  (1921,19,'جميلة','Djemila'),
+  (1922,19,'بني ورتيلان','Beni-ouartilane'),
+  (1923,19,'الرصفة','Rosfa'),
+  (1924,19,'أولاد عدوان','Ouled Addouane'),
+  (1925,19,'بلعة','Bellaa'),
+  (1926,19,'عين أرنات','Ain Arnat'),
+  (1927,19,'عموشة','Amoucha'),
+  (1928,19,'عين ولمان','Ain Oulmane'),
+  (1929,19,'بيضاء برج','Beidha Bordj'),
+  (1930,19,'بوعنداس','Bouandas'),
+  (1931,19,'بازر الصخرة','Bazer-sakra'),
+  (1932,19,'حمام السخنة','Hamam Soukhna'),
+  (1933,19,'مزلوق','Mezloug'),
+  (1934,19,'بئر حدادة','Bir Haddada'),
+  (1935,19,'سرج الغول','Serdj-el-ghoul'),
+  (1936,19,'حربيل','Harbil'),
+  (1937,19,'الوريسية','El Ouricia'),
+  (1938,19,'تيزي نبشار','Tizi N''bechar'),
+  (1939,19,'صالح باي','Salah Bey'),
+  (1940,19,'عين أزال','Ain Azel'),
+  (1941,19,'قنزات','Guenzet'),
+  (1942,19,'تالة إيفاسن','Tala-ifacene'),
+  (1943,19,'بوقاعة','Bougaa'),
+  (1944,19,'بني فودة','Beni Fouda'),
+  (1945,19,'تاشودة','Tachouda'),
+  (1946,19,'بني موحلي','Beni-mouhli'),
+  (1947,19,'أولاد صابر','Ouled Sabor'),
+  (1948,19,'قلال بوطالب','Guellal'),
+  (1949,19,'عين السبت','Ain-sebt'),
+  (1950,19,'حمام قرقور','Hammam Guergour'),
+  (1951,19,'أيت نوال مزادة','Ait Naoual Mezada'),
+  (1952,19,'قصر الأبطال','Ksar El Abtal'),
+  (1953,19,'بني وسين','Beni Oussine'),
+  (1954,19,'أيت تيزي','Ait-tizi'),
+  (1955,19,'ماوكلان','Maouaklane'),
+  (1956,19,'القتلة الزرقاء','Guelta Zerka'),
+  (1957,19,'وادي البارد','Oued El Barad'),
+  (1958,19,'الطاية','Taya'),
+  (1959,19,'الولجة','El-ouldja'),
+  (1960,19,'التلعة','Tella'),
+  (2301,23,'عنابة','Annaba'),
+  (2302,23,'برحال','Berrahel'),
+  (2303,23,'الحجار','El Hadjar'),
+  (2304,23,'العلمة','Eulma'),
+  (2305,23,'البوني','El Bouni'),
+  (2306,23,'وادي العنب','Oued El Aneb'),
+  (2307,23,'الشرفاء','Cheurfa'),
+  (2308,23,'سرايدي','Seraidi'),
+  (2309,23,'عين الباردة','Ain Berda'),
+  (2310,23,'شطايبي','Chetaibi'),
+  (2311,23,'سيدي عامر','Sidi Amar'),
+  (2312,23,'التريعات','Treat'),
+  (2501,25,'قسنطينة','Constantine'),
+  (2502,25,'حامة بوزيان','Hamma Bouziane'),
+  (2503,25,'ابن باديس الهرية','Ben Badis'),
+  (2504,25,'زيغود يوسف','Zighoud Youcef'),
+  (2505,25,'ديدوش مراد','Didouche Mourad'),
+  (2506,25,'الخروب','El Khroub'),
+  (2507,25,'عين عبيد','Ain Abid'),
+  (2508,25,'بني حميدان','Beni Hamidene'),
+  (2509,25,'أولاد رحمون','Ouled Rahmouni'),
+  (2510,25,'عين السمارة','Ain Smara'),
+  (2511,25,'بوجريو مسعود','Messaoud Boujeriou'),
+  (2512,25,'ابن زياد','Ibn Ziad'),
+  (3101,31,'وهران','Oran'),
+  (3102,31,'قديل','Gdyel'),
+  (3103,31,'بئر الجير','Bir El Djir'),
+  (3104,31,'حاسي بونيف','Hassi Bounif'),
+  (3105,31,'السانية','Es Senia'),
+  (3106,31,'أرزيو','Arzew'),
+  (3107,31,'بطيوة','Bethioua'),
+  (3108,31,'مرسى الحجاج','Marsat El Hadjadj'),
+  (3109,31,'عين الترك','Ain Turk'),
+  (3110,31,'العنصر','El Ancar'),
+  (3111,31,'وادي تليلات','Oued Tlelat'),
+  (3112,31,'طفراوي','Tafraoui'),
+  (3113,31,'سيدي الشحمي','Sidi Chami'),
+  (3114,31,'بوفتيس','Boufatis'),
+  (3115,31,'المرسى الكبير','Mers El Kebir'),
+  (3116,31,'بوصفر','Bousfer'),
+  (3117,31,'الكرمة','El Kerma'),
+  (3118,31,'البراية','El Braya'),
+  (3119,31,'حاسي بن عقبة','Hassi Ben Okba'),
+  (3120,31,'بن فريحة','Ben Freha'),
+  (3121,31,'حاسي مفسوخ','Hassi Mefsoukh'),
+  (3122,31,'سيدي بن يبقى','Sidi Ben Yebka'),
+  (3123,31,'مسرغين','Messerghin'),
+  (3124,31,'بوتليليس','Boutlelis'),
+  (3125,31,'عين الكرمة','Ain Kerma'),
+  (3126,31,'عين البية','Ain Biya'),
+  (4201,42,'تيبازة','Tipaza'),
+  (4202,42,'مناصر','Menaceur'),
+  (4203,42,'الأرهاط','Larhat'),
+  (4204,42,'دواودة','Douaouda'),
+  (4205,42,'بورقيقة','Bourkika'),
+  (4206,42,'خميستي','Khemisti'),
+  (4207,42,'أغبال','Aghbal'),
+  (4208,42,'حجوط','Hadjout'),
+  (4209,42,'سيدي عامر','Sidi-amar'),
+  (4210,42,'قوراية','Gouraya'),
+  (4211,42,'الناظور','Nador'),
+  (4212,42,'الشعيبة','Chaiba'),
+  (4213,42,'عين تاقورايت','Ain Tagourait'),
+  (4214,42,'شرشال','Cherchell'),
+  (4215,42,'الداموس','Damous'),
+  (4216,42,'مراد','Merad'),
+  (4217,42,'فوكة','Fouka'),
+  (4218,42,'بواسماعيل','Bou Ismail'),
+  (4219,42,'أحمر العين','Ahmer El Ain'),
+  (4220,42,'بوهارون','Bou Haroun'),
+  (4221,42,'سيدي غيلاس','Sidi Ghiles'),
+  (4222,42,'مسلمون','Messelmoun'),
+  (4223,42,'سيدي راشد','Sidi Rached'),
+  (4224,42,'القليعة','Kolea'),
+  (4225,42,'الحطاطبة','Attatba'),
+  (4226,42,'سيدي سميان','Sidi Semiane'),
+  (4227,42,'بني ميلك','Beni Mileuk'),
+  (4228,42,'حجرة النص','Hadjret Ennous');
+update communes set is_active = true where id = 4201;   -- تيبازة المدينة فقط في البداية
+
 -- ---------- Profiles ----------
 create table profiles (
   id          uuid primary key references auth.users(id) on delete cascade,
@@ -49,6 +294,7 @@ create table profiles (
   phone       text unique,
   state       account_state not null default 'active',
   customer_faults int not null default 0,
+  commune_id  int references communes(id),     -- البلدية التي اختارها الزبون
   created_at  timestamptz not null default now()
 );
 
@@ -64,6 +310,7 @@ create table stores (
   is_open    boolean not null default false,
   opens_at   time, closes_at time,
   state      account_state not null default 'active',
+  commune_id int not null default 4201 references communes(id),   -- افتراضي تيبازة المدينة
   created_at timestamptz not null default now()
 );
 
@@ -115,6 +362,7 @@ create table orders (
   distance_km     numeric(6,2) not null,
   courier_commission numeric(10,2) not null default 0,
   store_commission   numeric(10,2) not null default 0,
+  commune_id      int references communes(id),   -- بلدية الطلب
   ready_at        timestamptz,
   arrived_at      timestamptz,                  -- وصول الليفرور لعنوان الزبون
   fault           fault_party,
@@ -289,14 +537,15 @@ declare s stores; oid uuid; it jsonb; pr products; total numeric := 0; km numeri
 begin
   select * into me from profiles where id = auth.uid();
   if me.role <> 'customer' or me.state <> 'active' then raise exception 'الحساب غير مسموح له بالطلب'; end if;
-  select * into s from stores where id = p_store and is_open and state = 'active';
+  select * into s from stores where id = p_store and is_open and state = 'active'
+    and commune_id in (select id from communes where is_active);
   if not found then raise exception 'المتجر مغلق أو غير متاح'; end if;
   if jsonb_array_length(p_items) = 0 then raise exception 'السلة فارغة'; end if;
   km  := haversine_km(s.lat, s.lng, p_lat, p_lng);
   fee := delivery_fee_for(km);
   insert into orders(type, customer_id, store_id, dropoff_address, dropoff_lat, dropoff_lng,
-                     pickup_lat, pickup_lng, delivery_fee, distance_km)
-  values ('store', auth.uid(), p_store, p_addr, p_lat, p_lng, s.lat, s.lng, fee, round(km,2))
+                     pickup_lat, pickup_lng, delivery_fee, distance_km, commune_id)
+  values ('store', auth.uid(), p_store, p_addr, p_lat, p_lng, s.lat, s.lng, fee, round(km,2), s.commune_id)
   returning id into oid;
   for it in select * from jsonb_array_elements(p_items) loop
     select * into pr from products where id = (it->>'product_id')::uuid and store_id = p_store and available;
@@ -320,6 +569,8 @@ begin
   select * into me from profiles where id = auth.uid();
   if me.role <> 'customer' or me.state <> 'active' then raise exception 'الحساب غير مسموح له بالطلب'; end if;
   if p_type not in ('p2p','free') then raise exception 'نوع طلب غير صالح'; end if;
+  if me.commune_id is null or not exists (select 1 from communes where id = me.commune_id and is_active) then
+    raise exception 'الخدمة غير متوفرة في بلديتك بعد'; end if;
   if p_type = 'free' and p_kind = 'purchase' then
     if p_budget is null or p_budget > setting('free_order_max_purchase') then
       raise exception 'الميزانية تتجاوز سقف الشراء (% دج)', setting('free_order_max_purchase'); end if;
@@ -328,9 +579,9 @@ begin
   km  := haversine_km(p_from_lat, p_from_lng, p_lat, p_lng);
   fee := delivery_fee_for(km);
   insert into orders(type, customer_id, free_kind, description, budget, pickup_address, pickup_lat, pickup_lng,
-                     dropoff_address, dropoff_lat, dropoff_lng, delivery_fee, service_fee, distance_km)
+                     dropoff_address, dropoff_lat, dropoff_lng, delivery_fee, service_fee, distance_km, commune_id)
   values (p_type, auth.uid(), case when p_type='free' then p_kind end, p_desc, p_budget,
-          p_from_addr, p_from_lat, p_from_lng, p_addr, p_lat, p_lng, fee, svc, round(km,2))
+          p_from_addr, p_from_lat, p_from_lng, p_addr, p_lat, p_lng, fee, svc, round(km,2), me.commune_id)
   returning id into oid;
   update orders set ready_at = now() where id = oid;
   perform log_event(oid, 'new');
@@ -637,8 +888,33 @@ language sql security definer set search_path = public as
   $$ update couriers set available = p_on, last_lat = coalesce(p_lat, last_lat), last_lng = coalesce(p_lng, last_lng),
             last_seen = now() where id = auth.uid() $$;
 
+-- الزبون: اختيار البلدية (المفتوحة فقط)
+create function set_my_commune(p_commune int) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not exists (select 1 from communes where id = p_commune and is_active) then
+    raise exception 'هذه البلدية غير متاحة بعد'; end if;
+  update profiles set commune_id = p_commune where id = auth.uid();
+end $$;
+
+-- الأدمن: فتح/حجب بلدية، أو ولاية كاملة
+create function admin_set_commune_active(p_commune int, p_active boolean) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not is_admin() then raise exception 'للأدمن فقط'; end if;
+  update communes set is_active = p_active where id = p_commune;
+end $$;
+create function admin_set_wilaya_active(p_wilaya int, p_active boolean) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not is_admin() then raise exception 'للأدمن فقط'; end if;
+  update communes set is_active = p_active where wilaya_id = p_wilaya;
+end $$;
+
 -- ---------- Row Level Security ----------
 alter table app_settings  enable row level security;
+alter table wilayas       enable row level security;
+alter table communes      enable row level security;
 alter table profiles      enable row level security;
 alter table stores        enable row level security;
 alter table products      enable row level security;
@@ -657,7 +933,10 @@ alter table cash_handovers enable row level security;
 create policy settings_read  on app_settings  for select to authenticated using (true);
 create policy tiers_read     on pricing_tiers for select to authenticated using (true);
 create policy profiles_self  on profiles      for select to authenticated using (id = auth.uid() or is_admin());
-create policy stores_public  on stores        for select to authenticated using (state = 'active' or owner_id = auth.uid() or is_admin());
+create policy wilayas_read   on wilayas       for select to authenticated using (true);
+create policy communes_read  on communes      for select to authenticated using (true);
+create policy stores_public  on stores        for select to authenticated using (
+  (state = 'active' and commune_id in (select id from communes where is_active)) or owner_id = auth.uid() or is_admin());
 create policy products_public on products     for select to authenticated using (true);
 create policy couriers_self  on couriers      for select to authenticated using (id = auth.uid() or is_admin());
 
@@ -702,6 +981,7 @@ grant execute on function
   courier_report_not_delivered, courier_report_store_fault, courier_order_contact, admin_resolve_dispute,
   courier_request_topup, admin_decide_topup, admin_receive_cash, admin_pay_store,
   admin_set_role, admin_set_state, courier_set_available,
+  set_my_commune, admin_set_commune_active, admin_set_wilaya_active,
   courier_balance, store_balance, courier_cash_open, setting, current_role_of, is_admin, my_store_ids,
   haversine_km, delivery_fee_for, quote_delivery_fee
 to authenticated;

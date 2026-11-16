@@ -1,5 +1,12 @@
 // الترجمة الفرنسية. frFull: مطابقة كاملة للنص. frFrag: أجزاء تُستبدل داخل نصوص فيها متغيرات.
 const Map<String, String> frFull = {
+  'اختر ولايتك': 'Choisissez votre wilaya',
+  'اختر بلديتك': 'Choisissez votre commune',
+  'قريباً': 'Bientôt',
+  'سنفتح مدناً جديدة قريباً': 'De nouvelles villes ouvrent bientôt',
+  'هذه البلدية غير متاحة بعد': 'Cette commune n’est pas encore disponible',
+  'الخدمة غير متوفرة في بلديتك بعد': 'Le service n’est pas encore disponible dans votre commune',
+  'تغيير المنطقة': 'Changer de zone',
   'إن لم يرد الزبون': 'Si le client ne répond pas',
   'اتصال بالمتجر': 'Appeler le magasin',
   'المتجر لم يجهّز الطلب': 'Le magasin n’a pas préparé la commande',

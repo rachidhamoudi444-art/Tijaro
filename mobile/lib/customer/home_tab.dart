@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart' hide Text;
+import 'package:flutter/material.dart' as m show Text;
 import '../core/i18n.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -7,6 +8,7 @@ import '../core/brand.dart';
 import '../core/theme.dart';
 import '../core/labels.dart';
 import '../core/location.dart';
+import '../core/region.dart';
 import 'store_card.dart';
 
 /// الرئيسية: الشعار والمدينة، البحث، اللافتة، الفئات، متاجر قريبة، وبطاقة طلب ليفرور.
@@ -37,10 +39,10 @@ class _HomeTabState extends State<HomeTab> {
   }
 
   Future<List<Map<String, dynamic>>> _loadNearby() async {
-    final rows = await db
-        .from('stores')
-        .select('id,name,category,address,lat,lng,image_url')
-        .eq('is_open', true);
+    var q = db.from('stores').select('id,name,category,address,lat,lng,image_url').eq('is_open', true);
+    final cid = myCommune.value?['id'];
+    if (cid != null) q = q.eq('commune_id', cid);
+    final rows = await q;
     final stores = [for (final r in rows) Map<String, dynamic>.of(r)];
     final loc = await currentLocation();
     if (loc != null) {
@@ -78,11 +80,22 @@ class _HomeTabState extends State<HomeTab> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(children: [
-                  Icon(Icons.location_on_outlined, color: scheme.primary, size: 20),
-                  const SizedBox(width: 4),
-                  Text(appCity),
-                ]),
+                InkWell(
+                  onTap: () => Navigator.push(
+                      context, MaterialPageRoute(builder: (_) => const RegionPickerScreen())),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: ValueListenableBuilder<Map<String, dynamic>?>(
+                      valueListenable: myCommune,
+                      builder: (_, c, __) => Row(children: [
+                        Icon(Icons.location_on_outlined, color: scheme.primary, size: 20),
+                        const SizedBox(width: 4),
+                        m.Text(c == null ? appCity : regionName(c)),
+                        Icon(Icons.keyboard_arrow_down, color: scheme.primary, size: 20),
+                      ]),
+                    ),
+                  ),
+                ),
                 const LangToggle(),
               ],
             ),

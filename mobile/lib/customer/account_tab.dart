@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' hide Text;
 import '../core/i18n.dart';
 
 import '../core/api.dart';
+import '../core/region.dart';
 
 class AccountTab extends StatelessWidget {
   final VoidCallback onOpenOrders;
@@ -40,6 +41,15 @@ class AccountTab extends StatelessWidget {
                 title: const Text('طلباتي'),
                 trailing: const Icon(Icons.chevron_left),
                 onTap: onOpenOrders,
+              ),
+            ),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.location_on_outlined),
+                title: const Text('تغيير المنطقة'),
+                trailing: const Icon(Icons.chevron_left),
+                onTap: () => Navigator.push(
+                    context, MaterialPageRoute(builder: (_) => const RegionPickerScreen())),
               ),
             ),
             Card(
