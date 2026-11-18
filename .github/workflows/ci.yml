@@ -79,10 +79,19 @@ jobs:
           open(p, "w", encoding="utf-8").write(s)
           PY
           grep -n "uses-permission" android/app/src/main/AndroidManifest.xml
-      - name: Use fixed signing key so updates install over previous versions
+      - name: Use the owner's private signing key (GitHub secret TIJARO_KEYSTORE_B64)
+        env:
+          KEYSTORE_B64: ${{ secrets.TIJARO_KEYSTORE_B64 }}
         run: |
           mkdir -p ~/.android
-          cp mobile/debug.keystore ~/.android/debug.keystore
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > ~/.android/debug.keystore
+            echo "Signing with the PRIVATE owner keystore"
+          else
+            cp mobile/debug.keystore ~/.android/debug.keystore
+            echo "::warning::TIJARO_KEYSTORE_B64 secret not set: signing with the legacy PUBLIC key. Add the secret."
+          fi
+          keytool -list -keystore ~/.android/debug.keystore -storepass android 2>/dev/null | grep -i "fingerprint" || true
       - name: Disable Android lint on release builds (lint tool crashes on CI)
         working-directory: mobile
         run: |
@@ -122,6 +131,11 @@ jobs:
         with:
           name: apk-${{ matrix.app }}
           path: mobile/${{ matrix.file }}
+      - uses: actions/upload-artifact@v4
+        if: matrix.app == 'customer'
+        with:
+          name: pubspec-lock
+          path: mobile/pubspec.lock
 
   publish:
     name: Publish APKs (download from phone)

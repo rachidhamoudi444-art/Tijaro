@@ -337,7 +337,7 @@ create table product_media (
 );
 create index on product_media(product_id, sort);
 
-create function product_media_guard() returns trigger language plpgsql as $$
+create function product_media_guard() returns trigger language plpgsql set search_path = public as $$
 declare sid uuid; n int;
 begin
   select store_id into sid from products where id = new.product_id;
@@ -477,7 +477,7 @@ create table cash_handovers (            -- تسليم النقد للمكتب
 );
 
 -- append-only enforcement
-create function forbid_change() returns trigger language plpgsql as $$
+create function forbid_change() returns trigger language plpgsql set search_path = public as $$
 begin raise exception 'هذا السجل للإضافة فقط: لا تعديل ولا حذف (%).', tg_table_name; end $$;
 create trigger wallet_ledger_immutable before update or delete on wallet_ledger
   for each row execute function forbid_change();
@@ -489,7 +489,7 @@ create trigger cash_handovers_immutable before update or delete on cash_handover
   for each row execute function forbid_change();
 
 -- ---------- Helpers ----------
-create function setting(k text) returns numeric language sql stable as
+create function setting(k text) returns numeric language sql stable set search_path = public as
   $$ select value from app_settings where key = k $$;
 
 create function current_role_of() returns user_role language sql stable security definer set search_path = public as
@@ -503,14 +503,14 @@ create function my_store_ids() returns setof uuid language sql stable security d
 
 create function haversine_km(lat1 double precision, lng1 double precision,
                              lat2 double precision, lng2 double precision)
-returns numeric language sql immutable as $$
+returns numeric language sql immutable set search_path = public as $$
   select (2 * 6371 * asin(sqrt(
     power(sin(radians(lat2 - lat1) / 2), 2) +
     cos(radians(lat1)) * cos(radians(lat2)) * power(sin(radians(lng2 - lng1) / 2), 2)
   )))::numeric
 $$;
 
-create function delivery_fee_for(km numeric) returns numeric language sql stable as $$
+create function delivery_fee_for(km numeric) returns numeric language sql stable set search_path = public as $$
   select fee + greatest(0, ceil(km - from_km)) * extra_per_km
   from pricing_tiers
   where km >= from_km and (to_km is null or km < to_km)
@@ -520,7 +520,7 @@ $$;
 -- عرض سعر التوصيل للزبون قبل تأكيد الطلب (نفس حساب الخادم عند إنشاء الطلب)
 create function quote_delivery_fee(p_from_lat double precision, p_from_lng double precision,
                                    p_to_lat double precision, p_to_lng double precision)
-returns numeric language sql stable as
+returns numeric language sql stable set search_path = public as
   $$ select delivery_fee_for(haversine_km(p_from_lat, p_from_lng, p_to_lat, p_to_lng)) $$;
 
 create function courier_balance(cid uuid) returns numeric language sql stable security definer set search_path = public as
@@ -1005,6 +1005,11 @@ revoke all on all functions in schema public from public, anon, authenticated;
 grant select on all tables in schema public to authenticated;
 grant insert, update, delete on products to authenticated;           -- يحكمها RLS
 grant insert, update, delete on product_media to authenticated;       -- يحكمها RLS
+
+-- تحصين: القوائم الجغرافية للقراءة فقط من التطبيق (الكتابة عبر دوال الأدمن)، والزائر غير المسجل لا يصل لشيء
+revoke all on wilayas, communes, product_media from anon;
+revoke insert, update, delete, truncate, references, trigger on wilayas, communes from authenticated;
+revoke execute on function product_media_guard() from public, anon, authenticated;
 grant update (is_open, name, address, opens_at, closes_at, image_url) on stores to authenticated;
 grant insert, delete on stores to authenticated;                      -- الأدمن فقط عبر RLS
 grant update on app_settings to authenticated;
