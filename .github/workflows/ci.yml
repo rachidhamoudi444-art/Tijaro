@@ -154,6 +154,6 @@ jobs:
         run: |
           ls -la apks
           gh release delete latest --yes --cleanup-tag --repo "${{ github.repository }}" || true
-          gh release create latest apks/*.apk \
+          gh release create latest apks/*.apk apks/pubspec.lock \
             --repo "${{ github.repository }}" --title "Tijaro apps (latest build)" \
             --notes "Customer: tijaro.apk | Driver: tijaro-driver.apk | Business: tijaro-business.apk. Commit ${{ github.sha }}" --prerelease
