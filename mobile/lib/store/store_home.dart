@@ -5,6 +5,7 @@ import '../core/i18n.dart';
 
 import '../core/api.dart';
 import '../core/labels.dart';
+import 'product_edit_screen.dart';
 
 /// شاشة صاحب المتجر: الطلبات الواردة، المنتجات، وفتح/إغلاق المتجر.
 class StoreHome extends StatefulWidget {
@@ -283,44 +284,11 @@ class _ProductsViewState extends State<_ProductsView> {
   void _reload() => setState(() => _future = _load());
 
   Future<void> _edit([Map<String, dynamic>? p]) async {
-    final name = TextEditingController(text: p == null ? '' : '${p['name']}');
-    final price = TextEditingController(text: p == null ? '' : asNum(p['price']).toStringAsFixed(0));
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(p == null ? 'منتج جديد' : 'تعديل المنتج'),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          TextField(controller: name, decoration: InputDecoration(labelText: tr('اسم المنتج'))),
-          const SizedBox(height: 12),
-          TextField(
-            controller: price,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(labelText: tr('السعر (دج)')),
-          ),
-        ]),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('حفظ')),
-        ],
-      ),
+    await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => ProductEditScreen(storeId: widget.storeId, product: p)),
     );
-    if (ok != true) return;
-    final n = name.text.trim();
-    final pr = num.tryParse(price.text.trim());
-    if (n.isEmpty || pr == null || pr < 0) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('أدخل اسماً وسعراً صحيحاً')));
-      return;
-    }
-    try {
-      if (p == null) {
-        await db.from('products').insert({'store_id': widget.storeId, 'name': n, 'price': pr});
-      } else {
-        await db.from('products').update({'name': n, 'price': pr}).eq('id', p['id']);
-      }
-      _reload();
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyError(e))));
-    }
+    if (mounted) _reload();
   }
 
   Future<void> _setAvailable(Map<String, dynamic> p, bool v) async {
@@ -376,8 +344,22 @@ class _ProductsViewState extends State<_ProductsView> {
             itemBuilder: (context, i) {
               final p = products[i];
               final on = p['available'] == true;
+              final img = p['image_url'] as String?;
               return ListTile(
                 onTap: () => _edit(p),
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: (img == null || img.isEmpty)
+                        ? Container(
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            child: Icon(Icons.image_outlined, color: Theme.of(context).colorScheme.outline))
+                        : Image.network(img, fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Icon(Icons.broken_image_outlined)),
+                  ),
+                ),
                 title: Text('${p['name']}', style: TextStyle(decoration: on ? null : TextDecoration.lineThrough)),
                 subtitle: Text(dinar(asNum(p['price']))),
                 trailing: Row(mainAxisSize: MainAxisSize.min, children: [

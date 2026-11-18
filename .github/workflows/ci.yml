@@ -104,7 +104,7 @@ jobs:
       - name: App icon, name and id
         working-directory: mobile
         run: |
-          dart run flutter_launcher_icons -f flutter_launcher_icons-${{ matrix.app }}.yaml
+          dart run flutter_launcher_icons -f launcher_${{ matrix.app }}.yaml
           sed -i 's/android:label="[^"]*"/android:label="${{ matrix.label }}"/' android/app/src/main/AndroidManifest.xml
           sed -i -E 's/applicationId *=? *"[^"]*"/applicationId = "${{ matrix.appid }}"/' android/app/build.gradle*
           grep -n "applicationId\|android:label" android/app/build.gradle* android/app/src/main/AndroidManifest.xml

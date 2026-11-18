@@ -3,6 +3,7 @@ import '../core/i18n.dart';
 
 import '../core/api.dart';
 import '../core/labels.dart';
+import '../core/product_detail.dart';
 import 'checkout_screen.dart';
 
 /// صفحة متجر واحد: المنتجات والسلة (متجر واحد في كل طلب).
@@ -22,7 +23,7 @@ class _StoreScreenState extends State<StoreScreen> {
   Future<List<Map<String, dynamic>>> _load() async {
     final rows = await db
         .from('products')
-        .select('id,name,price,image_url')
+        .select('id,name,price,image_url,script')
         .eq('store_id', widget.store['id'])
         .eq('available', true)
         .order('name');
@@ -84,6 +85,19 @@ class _StoreScreenState extends State<StoreScreen> {
               final qty = _cart[id] ?? 0;
               final img = p['image_url'] as String?;
               return ListTile(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProductDetailScreen(
+                      productId: id,
+                      name: '${p['name']}',
+                      price: asNum(p['price']),
+                      script: p['script'] as String?,
+                      getQty: () => _cart[id] ?? 0,
+                      onChange: (d) => _change(id, d),
+                    ),
+                  ),
+                ),
                 contentPadding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
                 leading: ClipRRect(
                   borderRadius: BorderRadius.circular(12),

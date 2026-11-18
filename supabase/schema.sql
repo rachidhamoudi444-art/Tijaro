@@ -320,8 +320,38 @@ create table products (
   name       text not null,
   price      numeric(10,2) not null check (price >= 0),
   image_url  text,
-  available  boolean not null default true
+  available  boolean not null default true,
+  script     text check (script is null or char_length(script) <= 2000)   -- سكريبت يرافق الصور والفيديو
 );
+
+-- صور وفيديوهات المنتج (الملفات في Supabase Storage داخل bucket اسمه product-media)
+create table product_media (
+  id         uuid primary key default gen_random_uuid(),
+  product_id uuid not null references products(id) on delete cascade,
+  store_id   uuid not null references stores(id) on delete cascade,
+  kind       text not null check (kind in ('image','video')),
+  url        text not null,
+  path       text not null,                    -- <store_id>/<product_id>/<file>
+  sort       int  not null default 0,
+  created_at timestamptz not null default now()
+);
+create index on product_media(product_id, sort);
+
+create function product_media_guard() returns trigger language plpgsql as $$
+declare sid uuid; n int;
+begin
+  select store_id into sid from products where id = new.product_id;
+  if sid is null then raise exception 'منتج غير موجود'; end if;
+  new.store_id := sid;                                           -- لا يمكن نسبة وسائط لمتجر آخر
+  if new.path not like sid::text || '/%' or position(new.path in new.url) = 0 then
+    raise exception 'مسار ملف غير صالح'; end if;
+  select count(*) into n from product_media where product_id = new.product_id and kind = new.kind;
+  if new.kind = 'image' and n >= 6 then raise exception 'الحد الأقصى 6 صور لكل منتج'; end if;
+  if new.kind = 'video' and n >= 1 then raise exception 'فيديو واحد لكل منتج'; end if;
+  return new;
+end $$;
+create trigger product_media_guard_t before insert on product_media
+  for each row execute function product_media_guard();
 
 create table couriers (
   id            uuid primary key references profiles(id),
@@ -918,6 +948,7 @@ alter table communes      enable row level security;
 alter table profiles      enable row level security;
 alter table stores        enable row level security;
 alter table products      enable row level security;
+alter table product_media  enable row level security;
 alter table couriers      enable row level security;
 alter table pricing_tiers enable row level security;
 alter table orders        enable row level security;
@@ -938,6 +969,10 @@ create policy communes_read  on communes      for select to authenticated using 
 create policy stores_public  on stores        for select to authenticated using (
   (state = 'active' and commune_id in (select id from communes where is_active)) or owner_id = auth.uid() or is_admin());
 create policy products_public on products     for select to authenticated using (true);
+create policy media_read  on product_media for select to authenticated using (true);
+create policy media_owner on product_media for all to authenticated
+  using (store_id in (select my_store_ids()) or is_admin())
+  with check (store_id in (select my_store_ids()) or is_admin());
 create policy couriers_self  on couriers      for select to authenticated using (id = auth.uid() or is_admin());
 
 -- المتجر يدير منتجاته ومتجره (ليس السعر المالي)
@@ -969,6 +1004,7 @@ revoke all on all tables in schema public from anon, authenticated;
 revoke all on all functions in schema public from public, anon, authenticated;
 grant select on all tables in schema public to authenticated;
 grant insert, update, delete on products to authenticated;           -- يحكمها RLS
+grant insert, update, delete on product_media to authenticated;       -- يحكمها RLS
 grant update (is_open, name, address, opens_at, closes_at, image_url) on stores to authenticated;
 grant insert, delete on stores to authenticated;                      -- الأدمن فقط عبر RLS
 grant update on app_settings to authenticated;

@@ -409,3 +409,34 @@ begin
   perform t_logout();
   raise notice 'OK 14: الولايات والبلديات';
 end $$;
+
+-- ---------- 15) وسائط المنتجات: لصاحب المتجر فقط، مع حدود ----------
+do $$
+declare n int; sid text := '00000000-0000-0000-0000-00000000f001'; pid text := '00000000-0000-0000-0000-00000000b001'; i int;
+begin
+  perform t_login('00000000-0000-0000-0000-0000000000d1');
+  update products set script = 'سكريبت تجريبي' where id = pid::uuid;
+  for i in 1..6 loop
+    insert into product_media(product_id, store_id, kind, url, path)
+    values (pid::uuid, sid::uuid, 'image', 'https://x/'||sid||'/'||pid||'/'||i||'.jpg', sid||'/'||pid||'/'||i||'.jpg');
+  end loop;
+  perform t_expect_fail(format($q$insert into product_media(product_id,store_id,kind,url,path) values (%L,%L,'image','https://x/%s/%s/7.jpg','%s/%s/7.jpg')$q$, pid, sid, sid, pid, sid, pid), '6 صور');
+  insert into product_media(product_id, store_id, kind, url, path)
+  values (pid::uuid, sid::uuid, 'video', 'https://x/'||sid||'/'||pid||'/v.mp4', sid||'/'||pid||'/v.mp4');
+  perform t_expect_fail(format($q$insert into product_media(product_id,store_id,kind,url,path) values (%L,%L,'video','https://x/%s/%s/w.mp4','%s/%s/w.mp4')$q$, pid, sid, sid, pid, sid, pid), 'فيديو واحد');
+  perform t_expect_fail(format($q$insert into product_media(product_id,store_id,kind,url,path) values (%L,%L,'image','https://x/other.jpg','other/x.jpg')$q$, pid, sid), 'مسار');
+  perform t_expect_fail(format($q$update products set script = repeat('x', 2001) where id = %L$q$, pid), 'check');
+  perform t_logout();
+  -- الزبون يقرأ فقط ولا يكتب
+  perform t_login('00000000-0000-0000-0000-0000000000c1');
+  select count(*) into n from product_media; assert n = 7, 'الزبون يرى الوسائط';
+  perform t_expect_fail(format($q$insert into product_media(product_id,store_id,kind,url,path) values (%L,%L,'image','u','p')$q$, pid, sid));
+  delete from product_media; select count(*) into n from product_media; assert n = 7, 'الزبون لا يحذف';
+  perform t_logout();
+  -- ليفرور لا يكتب
+  perform t_login('00000000-0000-0000-0000-0000000000e1');
+  perform t_expect_fail(format($q$insert into product_media(product_id,store_id,kind,url,path) values (%L,%L,'image','u','p')$q$, pid, sid));
+  perform t_logout();
+  assert (select count(*) from product_media) = 7, 'لم تتغير الوسائط';
+  raise notice 'OK 15: وسائط المنتجات';
+end $$;
